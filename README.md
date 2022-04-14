@@ -1,3 +1,5 @@
+[![Netlify Status](https://api.netlify.com/api/v1/badges/2a33471e-4df3-45f0-9e3e-4254adcc6773/deploy-status)](https://app.netlify.com/sites/gimmemoney/deploys)
+
 # app
 An app for splitting bills among friends
 

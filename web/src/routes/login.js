@@ -2,7 +2,7 @@ import './login.scss';
 
 export default function Login() {
     return (
-        <>
+        <div id="content">
             <nav class="container-fluid">
                 <ul>
                     <li><a href="./" class="contrast" onclick="event.preventDefault()"><strong>splitr</strong></a></li>
@@ -14,7 +14,7 @@ export default function Login() {
                     <div>
                         <hgroup>
                             <h1 id="title">splitr</h1>
-                            <h2>A minimalist layout for Login pages</h2>
+                            <h2>A web-app for sharing expenses among friends.</h2>
                         </hgroup>
                         <form>
                             <input type="text" name="login" placeholder="Login" aria-label="Login" autocomplete="nickname" required />
@@ -34,6 +34,6 @@ export default function Login() {
             <footer class="container-fluid">
                 <small>Built with <a href="https://picocss.com" class="secondary">Pico</a></small>
             </footer>
-        </>
+        </div>
     )
 }

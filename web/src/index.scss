@@ -1,6 +1,32 @@
 @use '../node_modules/@picocss/pico/css/pico.min.css';
 
-html, body, #root {
+h1 {
+    --font-size: 2rem;
+    --typography-spacing-vertical: 1.5rem;
+}
+
+h2 {
+    --typography-spacing-vertical: 1rem;
+}
+
+h3 {
+    --font-size: 1.5rem;
+    --typography-spacing-vertical: 0.75rem;
+}
+
+h4 {
+    --font-size: 1.25rem;
+    --typography-spacing-vertical: 0.5rem;
+}
+
+h5 {
+    --font-size: 1.125rem;
+    --typography-spacing-vertical: 0.33rem;
+}
+
+html,
+body,
+#root {
     height: 100%;
     width: 100%;
 }

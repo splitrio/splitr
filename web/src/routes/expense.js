@@ -7,9 +7,11 @@ import './expense.scss';
 export default function Expense() {
     const navigate = useNavigate();
     return (
-        <div>
-            <span id="back"><FiX onClick={() => navigate(-1)} /></span>
-            <h2>Add Expense</h2>
+        <>
+            <nav>
+                <h2>Add Expense</h2>
+                <span id="back"><FiX onClick={() => navigate(-1)} /></span>
+            </nav>
             <Formik
                 initialValues={{ email: '', password: '' }}
                 validate={values => {
@@ -33,17 +35,48 @@ export default function Expense() {
                 {({ touched, errors, isSubmitting }) => (
                     <Form>
                         <label htmlFor="email">Email</label>
-                        <Field type="email" name="email" aria-invalid={touched.email && !!errors.email}/>
+                        <Field type="email" name="email" aria-invalid={touched.email && !!errors.email} />
                         <ErrorMessage name="email" component="small" />
                         <label htmlFor="password">Password</label>
                         <Field type="password" name="password" />
                         <ErrorMessage name="password" component="small" />
+                        <table>
+                            <colgroup>
+                                <col span="1" style={{width: 70 + '%'}} />
+                                <col span="1" style={{width: 15 + '%'}} />
+                                <col span="1" style={{width: 15 + '%'}} />
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Price</th>
+                                    <th scope="col">Belongs To</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">Iced Cappucino</th>
+                                    <td>$5.45</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">BLT Sandwich</th>
+                                    <td>$10.24</td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Chicken Parmesan</th>
+                                    <td>$15.60</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
                         <button className="contrast" type="submit" disabled={isSubmitting}>
                             Add
                         </button>
                     </Form>
                 )}
             </Formik>
-        </div>
+        </>
     );
 }

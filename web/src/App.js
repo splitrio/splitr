@@ -1,16 +1,34 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './routes/login';
+import Dashboard from './routes/dashboard';
 
 import './App.scss';
 
-function App() {
+export default function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Login/>}></Route>
-            </Routes>
-        </BrowserRouter>
+        <div id="content">
+            <nav className="container-fluid">
+                <ul>
+                    <li><a href="./" className="contrast" onClick={event => event.preventDefault()}><strong>splitr</strong></a></li>
+                </ul>
+            </nav>
+
+            <main className="container">
+                <article className="grid">
+                    <div>
+                        <BrowserRouter>
+                            <Routes>
+                                <Route path="/" element={<Login />} />
+                                <Route path="/dashboard" element={<Dashboard />} />
+                            </Routes>
+                        </BrowserRouter>
+                    </div>
+                </article>
+            </main>
+
+            <footer className="container-fluid">
+                <small>Built with <a href="https://picocss.com" className="secondary">Pico</a></small>
+            </footer>
+        </div>
     );
 }
-
-export default App;

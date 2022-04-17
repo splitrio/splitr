@@ -1,39 +1,31 @@
-import './login.scss';
+import { useNavigate } from 'react-router-dom';
+import { useTitle } from '../hooks';
 
 export default function Login() {
+    useTitle("Login");
+    const navigate = useNavigate();
+
+    function onSubmit() {
+        navigate('/dashboard');
+    }
+
     return (
-        <div id="content">
-            <nav class="container-fluid">
-                <ul>
-                    <li><a href="./" class="contrast" onclick="event.preventDefault()"><strong>splitr</strong></a></li>
-                </ul>
-            </nav>
-
-            <main class="container">
-                <article class="grid">
-                    <div>
-                        <hgroup>
-                            <h1 id="title">splitr</h1>
-                            <h2>A web-app for sharing expenses among friends.</h2>
-                        </hgroup>
-                        <form>
-                            <input type="text" name="login" placeholder="Login" aria-label="Login" autocomplete="nickname" required />
-                            <input type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" required />
-                            <fieldset>
-                                <label for="remember">
-                                    <input type="checkbox" role="switch" id="remember" name="remember" />
-                                    Remember me
-                                </label>
-                            </fieldset>
-                            <button type="submit" class="contrast" onclick="event.preventDefault()">Login</button>
-                        </form>
-                    </div>
-                </article>
-            </main>
-
-            <footer class="container-fluid">
-                <small>Built with <a href="https://picocss.com" class="secondary">Pico</a></small>
-            </footer>
-        </div>
-    )
+        <>
+            <hgroup>
+                <h1 className="title">splitr</h1>
+                <h2>A web-app for sharing expenses among friends.</h2>
+            </hgroup>
+            <form onSubmit={onSubmit}>
+                <input type="text" name="login" placeholder="Email" aria-label="Login" autoComplete="nickname" required />
+                <input type="password" name="password" placeholder="Password" aria-label="Password" autoComplete="current-password" required />
+                <fieldset>
+                    <label htmlFor="remember">
+                        <input type="checkbox" role="switch" id="remember" name="remember" />
+                        Remember me
+                    </label>
+                </fieldset>
+                <button type="submit" className="contrast">Login</button>
+            </form>
+        </>
+    );
 }

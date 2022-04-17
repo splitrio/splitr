@@ -13,9 +13,9 @@ export default function App() {
                 </ul>
             </nav>
 
-            <main className="container">
+            <main id="pageContainer" class="container">
                 <article className="grid">
-                    <div>
+                    <div id="page">
                         <BrowserRouter>
                             <Routes>
                                 <Route path="/" element={<Login />} />

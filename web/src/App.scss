@@ -1,3 +1,7 @@
+/**************************/
+/* Layout                */
+/**************************/
+
 #content {
     display: flex;
     flex-direction: column;
@@ -13,7 +17,7 @@
     min-height: 100%;
 }
 
-#pageContainer > article {
+#pageContainer>article {
     padding: 0;
     overflow: hidden;
 }

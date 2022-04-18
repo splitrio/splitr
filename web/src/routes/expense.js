@@ -1,16 +1,14 @@
 import { FiX } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-
-import './expense.scss';
+import Page from '../components/Page';
 
 export default function Expense() {
-    const navigate = useNavigate();
     return (
-        <>
+        <Page>
             <nav>
                 <h2>Add Expense</h2>
-                <span id="back"><FiX onClick={() => navigate(-1)} /></span>
+                <Link to={-1} className="contrast" id="back"><FiX style={{ fontSize: 32 + 'px' }}/></Link>
             </nav>
             <Formik
                 initialValues={{ email: '', password: '' }}
@@ -77,6 +75,7 @@ export default function Expense() {
                     </Form>
                 )}
             </Formik>
-        </>
+            {/* <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/> */}
+        </Page>
     );
 }

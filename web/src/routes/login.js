@@ -1,21 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { useTitle } from '../hooks';
+import Page from '../components/Page';
 
 export default function Login() {
-    useTitle("Login");
     const navigate = useNavigate();
 
-    function onSubmit() {
-        navigate('/dashboard');
-    }
-
     return (
-        <>
+        <Page>
             <hgroup>
                 <h1 className="title">splitr</h1>
                 <h2>A web-app for sharing expenses among friends.</h2>
             </hgroup>
-            <form onSubmit={onSubmit}>
+            <form onSubmit={() => navigate('/dashboard')}>
                 <input type="text" name="login" placeholder="Email" aria-label="Login" autoComplete="nickname" required />
                 <input type="password" name="password" placeholder="Password" aria-label="Password" autoComplete="current-password" required />
                 <fieldset>
@@ -26,6 +21,6 @@ export default function Login() {
                 </fieldset>
                 <button type="submit" className="contrast">Login</button>
             </form>
-        </>
+        </Page>
     );
 }

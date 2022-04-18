@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { TransitionGroup, CSSTransition } from "react-transition-group";
 import Login from './routes/login';
 import Dashboard from './routes/dashboard';
 import Expense from './routes/expense';
@@ -6,31 +7,19 @@ import Expense from './routes/expense';
 import './App.scss';
 
 export default function App() {
+    // Set global document title
+    document.title = "splitr";
+    const location = useLocation();
+
     return (
-        <div id="content">
-            <nav className="container-fluid">
-                <ul>
-                    <li><a href="./" className="contrast" onClick={event => event.preventDefault()}><strong>splitr</strong></a></li>
-                </ul>
-            </nav>
-
-            <main id="pageContainer" className="container">
-                <article className="grid">
-                    <div id="page">
-                        <BrowserRouter>
-                            <Routes>
-                                <Route path="/" element={<Login />} />
-                                <Route path="/dashboard" element={<Dashboard />} />
-                                <Route path="/expense" element={<Expense />} />
-                            </Routes>
-                        </BrowserRouter>
-                    </div>
-                </article>
-            </main>
-
-            <footer className="container-fluid">
-                <small>Built with <a href="https://picocss.com" className="secondary">Pico</a></small>
-            </footer>
-        </div>
+        <TransitionGroup component={null}>
+            <CSSTransition key={location.key} classNames="fade" timeout={300}>
+                <Routes location={location}>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/expense" element={<Expense />} />
+                </Routes>
+            </CSSTransition>
+        </TransitionGroup>
     );
 }

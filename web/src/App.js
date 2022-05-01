@@ -10,7 +10,7 @@ export default function App() {
     // Set global document title
     document.title = "splitr";
     const location = useLocation();
-
+    
     return (
         <TransitionGroup component={null}>
             <CSSTransition key={location.key} classNames="fade" timeout={300}>

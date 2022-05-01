@@ -36,6 +36,7 @@ const ItemModal = ({ item, isOpen, close, apply, remove }) => {
 
     return (
         <Modal
+            closeTimeoutMS={200}
             isOpen={isOpen}
             onRequestClose={close}
             style={customModalStyles}
@@ -92,7 +93,7 @@ export default function Expense() {
         }
     }
 
-    const [editing, setEditing] = useState(0);
+    const [editing, setEditing] = useState(-1);
 
     function updateItem(values, pushValue, newItem) {
         for (let i = 0; i < values.length; i++) {
@@ -103,6 +104,18 @@ export default function Expense() {
         }
 
         pushValue(newItem);
+    }
+
+    function subtotal(items) { return items.reduce((total, item) => total + item.quantity * item.price, 0); }
+
+    function grandTotal(values) {
+        let sub = subtotal(values.items);
+        if (values.taxType === 'percentage')
+            sub *= 1 + (parseFloat(values.tax || 0) / 100);
+        else if (values.taxType === 'amount')
+            sub += parseFloat(values.tax || 0);
+        sub += parseFloat(values.tip || 0);
+        return sub;
     }
 
     return (
@@ -118,7 +131,9 @@ export default function Expense() {
                     split: 'proportionally',
                     date: '2022-04-30',
                     type: 'single',
-                    items: []
+                    items: [],
+                    taxType: 'percentage',
+                    tax: '10.25',
                 }}
                 validate={values => { }}
                 onSubmit={(values, { setSubmitting }) => {
@@ -165,58 +180,81 @@ export default function Expense() {
                         }
 
                         {values.type === 'multiple' &&
-                            <table role='grid'>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Quantity</th>
-                                        <th scope="col">Price</th>
-                                        <th scope="col" className='button-col'><FiPlusCircle className='click' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)} /></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <FieldArray name='items'>
-                                        {({ remove, push }) => (
-                                            <>
-                                                <ItemModal
-                                                    item={values.items[editing] || {}}
-                                                    isOpen={editing >= 0}
-                                                    close={() => setEditing(-1)}
-                                                    apply={value => updateItem(values.items, push, value)}
-                                                    remove={() => remove(editing)}
-                                                />
+                            <>
+                                <table role='grid'>
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Quantity</th>
+                                            <th scope="col">Price</th>
+                                            <th scope="col" className='button-col'><FiPlusCircle className='click' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)} /></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <FieldArray name='items'>
+                                            {({ remove, push }) => (
+                                                <>
+                                                    <ItemModal
+                                                        item={values.items[editing] || {}}
+                                                        isOpen={editing >= 0}
+                                                        close={() => setEditing(-1)}
+                                                        apply={value => updateItem(values.items, push, value)}
+                                                        remove={() => remove(editing)}
+                                                    />
 
-                                                {values.items.map((item, index) => (
-                                                    <tr key={item.id} className='click' onClick={() => setEditing(index)}>
-                                                        <td>{item.name}</td>
-                                                        <td>{item.quantity}</td>
-                                                        <td>{item.price}</td>
-                                                        <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
-                                                    </tr>
-                                                ))}
-                                                {values.items.length === 0 &&
-                                                    <tr>
-                                                        <td height="200px" colspan="4" valign="center" align="center">
-                                                            <div className='click no-items' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)}>
-                                                                Tap to add an item...
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            </>
-                                        )
-                                        }
-                                    </FieldArray>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th scope="col">Total</th>
-                                        <td></td>
-                                        <td>{`$${values.items.reduce((total, item) => total + item.price, 0)}`}</td>
-                                        <td className='button-col'></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                                    {values.items.map((item, index) => (
+                                                        <tr key={item.id} className='click' onClick={() => setEditing(index)}>
+                                                            <td>{item.name}</td>
+                                                            <td>{item.quantity}</td>
+                                                            <td>{item.price}</td>
+                                                            <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
+                                                        </tr>
+                                                    ))}
+                                                    {values.items.length === 0 &&
+                                                        <tr>
+                                                            <td height="200px" colSpan="4" valign="center" align="center">
+                                                                <div className='click no-items' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)}>
+                                                                    Tap to add an item...
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </>
+                                            )
+                                            }
+                                        </FieldArray>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th scope="col">Subtotal</th>
+                                            <td></td>
+                                            <td>{`$${subtotal(values.items)}`}</td>
+                                            <td className='button-col'></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+
+                                <div className='grid' style={{ gridTemplateColumns: '1fr 2fr' }}>
+                                    <div className='form-group col-4'>
+                                        <label htmlFor="taxType">Tax</label>
+                                        <Field as='select' name='taxType' required>
+                                            <option value="percentage">Percentage</option>
+                                            <option value="amount">Flat Fee</option>
+                                        </Field>
+                                    </div>
+                                    <div className='form-group'>
+                                        <label htmlFor="tax">{values.taxType === 'percentage' ? 'Percentage' : 'Amount'}</label>
+                                        <Field type='number' name='tax' />
+                                    </div>
+                                </div>
+
+                                <div className='form-group'>
+                                    <label htmlFor="tip">Tip</label>
+                                    <Field type='number' name='tip' placeholder='Optional' />
+                                </div>
+
+                                <h5 style={{marginBottom: '1em'}}>Grand Total • {`$${grandTotal(values)}`}</h5>
+                            </>
                         }
 
                         <button className="contrast" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>

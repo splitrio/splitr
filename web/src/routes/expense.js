@@ -1,5 +1,6 @@
 import { FiCheck, FiPlusCircle, FiTrash } from 'react-icons/fi';
 import { Formik, Form, Field, FieldArray } from 'formik';
+import AnimateHeight from 'react-animate-height';
 import Page from '../components/Page';
 import { useState } from 'react';
 import Modal from 'react-modal';
@@ -172,90 +173,90 @@ export default function Expense() {
                             </Field>
                         </div>
 
-                        {values.type === 'single' &&
-                            <div className='form-group'>
+                        <AnimateHeight
+                            height={values.type === 'single' ? 'auto' : 0}>
+                            <div className='form-group pop-in'>
                                 <label htmlFor="amount">Amount</label>
                                 <Field type='number' name='amount' required />
                             </div>
-                        }
+                        </AnimateHeight>
 
-                        {values.type === 'multiple' &&
-                            <>
-                                <table role='grid'>
-                                    <thead>
-                                        <tr>
-                                            <th scope="col">Name</th>
-                                            <th scope="col">Quantity</th>
-                                            <th scope="col">Price</th>
-                                            <th scope="col" className='button-col'><FiPlusCircle className='click' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)} /></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <FieldArray name='items'>
-                                            {({ remove, push }) => (
-                                                <>
-                                                    <ItemModal
-                                                        item={values.items[editing] || {}}
-                                                        isOpen={editing >= 0}
-                                                        close={() => setEditing(-1)}
-                                                        apply={value => updateItem(values.items, push, value)}
-                                                        remove={() => remove(editing)}
-                                                    />
+                        <AnimateHeight
+                            height={values.type === 'multiple' ? 'auto' : 0}>
+                            <table role='grid'>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Quantity</th>
+                                        <th scope="col">Price</th>
+                                        <th scope="col" className='button-col'><FiPlusCircle className='click' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)} /></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <FieldArray name='items'>
+                                        {({ remove, push }) => (
+                                            <>
+                                                <ItemModal
+                                                    item={values.items[editing] || {}}
+                                                    isOpen={editing >= 0}
+                                                    close={() => setEditing(-1)}
+                                                    apply={value => updateItem(values.items, push, value)}
+                                                    remove={() => remove(editing)}
+                                                />
 
-                                                    {values.items.map((item, index) => (
-                                                        <tr key={item.id} className='click' onClick={() => setEditing(index)}>
-                                                            <td>{item.name}</td>
-                                                            <td>{item.quantity}</td>
-                                                            <td>{item.price}</td>
-                                                            <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
-                                                        </tr>
-                                                    ))}
-                                                    {values.items.length === 0 &&
-                                                        <tr>
-                                                            <td height="200px" colSpan="4" valign="center" align="center">
-                                                                <div className='click no-items' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)}>
-                                                                    Tap to add an item...
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                </>
-                                            )
-                                            }
-                                        </FieldArray>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th scope="col">Subtotal</th>
-                                            <td></td>
-                                            <td>{`$${subtotal(values.items)}`}</td>
-                                            <td className='button-col'></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                                {values.items.map((item, index) => (
+                                                    <tr key={item.id} className='click' onClick={() => setEditing(index)}>
+                                                        <td>{item.name}</td>
+                                                        <td>{item.quantity}</td>
+                                                        <td>{item.price}</td>
+                                                        <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
+                                                    </tr>
+                                                ))}
+                                                {values.items.length === 0 &&
+                                                    <tr>
+                                                        <td height="200px" colSpan="4" valign="center" align="center">
+                                                            <div className='click no-items' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)}>
+                                                                Tap to add an item...
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </>
+                                        )
+                                        }
+                                    </FieldArray>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th scope="col">Subtotal</th>
+                                        <td></td>
+                                        <td>{`$${subtotal(values.items)}`}</td>
+                                        <td className='button-col'></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
 
-                                <div className='grid' style={{ gridTemplateColumns: '1fr 2fr' }}>
-                                    <div className='form-group col-4'>
-                                        <label htmlFor="taxType">Tax</label>
-                                        <Field as='select' name='taxType' required>
-                                            <option value="percentage">Percentage</option>
-                                            <option value="amount">Flat Fee</option>
-                                        </Field>
-                                    </div>
-                                    <div className='form-group'>
-                                        <label htmlFor="tax">{values.taxType === 'percentage' ? 'Percentage' : 'Amount'}</label>
-                                        <Field type='number' name='tax' />
-                                    </div>
+                            <div className='grid' style={{ gridTemplateColumns: '1fr 2fr' }}>
+                                <div className='form-group col-4'>
+                                    <label htmlFor="taxType">Tax</label>
+                                    <Field as='select' name='taxType' required>
+                                        <option value="percentage">Percentage</option>
+                                        <option value="amount">Flat Fee</option>
+                                    </Field>
                                 </div>
-
                                 <div className='form-group'>
-                                    <label htmlFor="tip">Tip</label>
-                                    <Field type='number' name='tip' placeholder='Optional' />
+                                    <label htmlFor="tax">{values.taxType === 'percentage' ? 'Percentage' : 'Amount'}</label>
+                                    <Field type='number' name='tax' />
                                 </div>
+                            </div>
 
-                                <h5 style={{marginBottom: '1em'}}>Grand Total • {`$${grandTotal(values)}`}</h5>
-                            </>
-                        }
+                            <div className='form-group'>
+                                <label htmlFor="tip">Tip</label>
+                                <Field type='number' name='tip' placeholder='Optional' />
+                            </div>
+
+                            <h5 style={{ marginBottom: '1em' }}>Grand Total • {`$${grandTotal(values)}`}</h5>
+                        </AnimateHeight>
 
                         <button className="contrast" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
                             Add Expense

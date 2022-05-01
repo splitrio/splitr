@@ -34,3 +34,43 @@ body,
 .title {
     font-size: 3em;
 }
+
+dialog {
+    pointer-events: none;
+}
+
+dialog>article {
+    pointer-events: all;
+}
+
+/**
+ * Input
+ */
+
+.form-group {
+    display: block;
+    position: relative;
+
+    >label {
+        position: absolute;
+        top: -0.8em;
+        left: 1em;
+        font-size: small;
+        padding: 0 5px;
+        background: linear-gradient(180deg, transparent 45%, var(--background-color) 50%);
+        color: var(--color);
+    }
+}
+
+/**
+ * Icons and Interactives
+ */
+
+.icon {
+    margin-bottom: 0.2em;
+    margin-right: 0.2em;
+}
+
+.click {
+    cursor: pointer;
+}

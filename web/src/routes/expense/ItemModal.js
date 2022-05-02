@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid'
 import Modal from 'react-modal';
 import CloseHeader from '../../components/CloseNav';
 
-import LabelInput from '../../components/LabelInput';
+import LabelInput from '../../components/form/LabelInput';
 import { DefaultItem, ItemSchema } from './schema';
 
 const customModalStyles = {

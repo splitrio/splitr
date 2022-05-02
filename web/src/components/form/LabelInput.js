@@ -2,7 +2,7 @@ import { Field, useFormikContext } from 'formik';
 import AnimateHeight from 'react-animate-height';
 import get from 'lodash/get';
 import './LabelInput.scss';
-import useLast from '../hooks/useLast';
+import useLast from '../../hooks/useLast';
 
 const tooltipHeight = (tooltip, hasError) => !!tooltip || hasError ? 'auto' : 0;
 

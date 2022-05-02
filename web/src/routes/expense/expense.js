@@ -1,17 +1,18 @@
 import { FiPlusCircle, FiTrash } from 'react-icons/fi';
 import { Formik, Form, FieldArray } from 'formik';
-import AnimateHeight from 'react-animate-height';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 import Page from '../../components/Page';
+import Show from '../../components/Show';
 import ItemModal from './ItemModal';
 import CloseHeader from '../../components/CloseNav';
 import { DefaultExpense, ExpenseSchema } from './schema';
-import LabelInput from '../../components/LabelInput';
-import PercentageAmountSelector from '../../components/PercentageAmountSelector';
+import LabelInput from '../../components/form/LabelInput';
+import Switch from '../../components/form/Switch';
+import PercentageAmountSelector from '../../components/form/PercentageAmountSelector';
 
 import './expense.scss';
-import toast from 'react-hot-toast';
 
 export default function Expense() {
     function getSplitTooltip(split) {
@@ -82,7 +83,7 @@ export default function Expense() {
                     }, 400);
                 }}
             >
-                {({ values, touched, errors, isSubmitting }) => (
+                {({ values, errors, isSubmitting }) => (
                     <Form noValidate>
                         <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
                         <LabelInput type='date' name='date' label='Date' />
@@ -96,11 +97,11 @@ export default function Expense() {
                             <option value="multiple">Multiple Items</option>
                         </LabelInput>
 
-                        <AnimateHeight height={values.type === 'single' ? 'auto' : 0}>
-                            <LabelInput type='number' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*"/>
-                        </AnimateHeight>
+                        <Show when={values.type === 'single'}>
+                            <LabelInput type='number' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*" />
+                        </Show>
 
-                        <AnimateHeight height={values.type === 'multiple' ? 'auto' : 0}>
+                        <Show when={values.type === 'multiple'}>
                             <table role='grid'>
                                 <thead>
                                     <tr>
@@ -163,11 +164,16 @@ export default function Expense() {
                             <PercentageAmountSelector name='tax' label='Tax' />
                             <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
 
-                        </AnimateHeight>
+                        </Show>
 
+                        <Show when={values.split !== 'individually'}>
+                            <Switch name='isSplit' label='Already Split' showTooltip={values.isSplit} tooltip="Everyone has already paid for this expense." />
+                        </Show>
+
+                        {/* 
                         <pre>{JSON.stringify(errors, null, 2)}</pre>
                         <pre>{JSON.stringify(values, null, 2)}</pre>
-                        <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre>
+                        <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre> */}
 
                         <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>
                             {(function () {

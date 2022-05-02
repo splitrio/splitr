@@ -43,6 +43,17 @@ dialog>article {
     pointer-events: all;
 }
 
+.tooltip {
+    display: block;
+    width: 100%;
+    margin-top: calc(var(--spacing) * -0.75);
+    margin-bottom: var(--spacing);
+}
+
+.error-color {
+    color: var(--form-element-invalid-border-color) !important;
+}
+
 /**
  * Icons and Interactives
  */

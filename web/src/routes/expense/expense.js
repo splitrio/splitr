@@ -6,9 +6,9 @@ import { useState } from 'react';
 import Page from '../../components/Page';
 import ItemModal from './ItemModal';
 import CloseHeader from '../../components/CloseNav';
-import { PercentageAmountSelector } from '../../components/Forms';
 import { DefaultExpense, ExpenseSchema } from './schema';
 import LabelInput from '../../components/LabelInput';
+import PercentageAmountSelector from '../../components/PercentageAmountSelector';
 
 import './expense.scss';
 import toast from 'react-hot-toast';

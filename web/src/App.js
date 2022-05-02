@@ -2,7 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import Login from './routes/login';
 import Dashboard from './routes/dashboard';
-import Expense from './routes/expense';
+import Expense from './routes/expense/expense';
 
 import './App.scss';
 

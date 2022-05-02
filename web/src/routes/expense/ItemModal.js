@@ -55,8 +55,8 @@ export default function ItemModal({ item, isOpen, close, apply, remove }) {
                         {({values, touched, errors}) => (
                             <Form noValidate>
                                 <LabelInput type='text' name='name' label='Name' placeholder='e.g. Banana, Desk, Camping Gear' />
-                                <LabelInput type='number' name='quantity' label='Quantity' inputMode="numeric" pattern="[0-9]*" />
-                                <LabelInput type='number' name='price' label='Price' inputMode="decimal" pattern="[0-9.]*" />
+                                <LabelInput type='string' name='quantity' label='Quantity' inputMode="numeric" pattern="[0-9]*" />
+                                <LabelInput type='string' name='price' label='Price' inputMode="decimal" pattern="[0-9.]*" />
 
                                 <div className='grid' style={{ marginTop: '30px' }}>
                                     <button type='submit' className="contrast"><FiCheck className='icon' />
@@ -66,9 +66,6 @@ export default function ItemModal({ item, isOpen, close, apply, remove }) {
                                         <button type='button' className="contrast" onClick={removeItem}><FiTrash className='icon' />Remove Item</button>
                                     }
                                 </div>
-                                {/* <code>{JSON.stringify(errors, null, 2)}</code>
-                                <code>{JSON.stringify(values, null, 2)}</code>
-                                <code>{JSON.stringify(touched, null, 2)}</code> */}
                             </Form>
                         )}
                     </Formik>

@@ -1,7 +1,12 @@
 import { string, object, date, number, array } from "yup";
 import moment from "moment";
 
-const OptionalNumberSchema = (defaultValue = 0) => number().transform(number => isNaN(number) ? defaultValue : number);
+const NullableNumber = () => number().transform((value, original) => {
+    if (typeof original === 'string' && original === '') return null;
+    return value;
+})
+    .nullable()
+    .typeError('Not a number!');
 
 const NameSchema = string()
     .min(3, 'Too Short!')
@@ -10,7 +15,7 @@ const NameSchema = string()
 
 const PercentageAmountSchema = object({
     type: string().oneOf(['percentage', 'amount']),
-    value: OptionalNumberSchema().min(0, "Can't be negative!")
+    value: NullableNumber().positive("Must be positive!")
         .when('type', {
             is: 'percentage',
             then: schema => schema.min(0, 'Must be between 0 and 100!')
@@ -18,13 +23,13 @@ const PercentageAmountSchema = object({
         })
 });
 
-const CurrencySchema = OptionalNumberSchema()
+const CurrencySchema = NullableNumber()
     .transform(number => Math.round(number * 100) / 100)
-    .min(0, "Can't be negative!");
+    .positive("Must be positive!");
 
 const ItemSchema = object({
     name: NameSchema,
-    quantity: number().positive('Must be positive!').integer('Must be an integer!').required('Required!'),
+    quantity: NullableNumber().positive('Must be positive!').integer('Must be an integer!').required('Required!'),
     price: CurrencySchema.required('Required!')
 });
 
@@ -32,15 +37,15 @@ const ExpenseSchema = object({
     name: NameSchema,
     date: date().max(new Date(), "Expenses can't be in the future!"),
     amount: CurrencySchema.when('type',
-    {
-        is: 'single',
-        then: schema => schema.required('Required!')
-    }),
+        {
+            is: 'single',
+            then: schema => schema.required('Required!')
+        }),
     items: array(ItemSchema).when('type',
-    {
-        is: 'multiple',
-        then: schema => schema.min(1, 'Must have at least one item!')
-    }),
+        {
+            is: 'multiple',
+            then: schema => schema.min(1, 'Must have at least one item!')
+        }),
     tax: PercentageAmountSchema,
     tip: PercentageAmountSchema
 });

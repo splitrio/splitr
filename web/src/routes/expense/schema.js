@@ -30,7 +30,7 @@ const name = Yup.string()
 const percentageAmount = () => {
     const pa = Yup.object({
         type: Yup.string(),
-        value: Yup.number().transform(number => isNaN(number) ? 0 : number)
+        value: Yup.number().typeError('Enter a number!').transform(number => isNaN(number) ? 0 : number)
     });
     
     return pa.when('type', {

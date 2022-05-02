@@ -10,6 +10,7 @@ import { PercentageAmountSelector, LabelInput } from '../../components/Forms';
 import { DefaultExpense, ExpenseSchema } from './schema';
 
 import './expense.scss';
+import toast from 'react-hot-toast';
 
 export default function Expense() {
     function getSplitTooltip(split) {
@@ -53,6 +54,12 @@ export default function Expense() {
         return grand;
     }
 
+    function onSubmitClicked(errors, values) {
+        // Toast no items when no other errors are pending
+        if (Object.keys(errors).length === 1 && values.items.length === 0)
+            toast.error('Add at least one item!');
+    }
+
     const [editing, setEditing] = useState(-1);
 
     return (
@@ -65,7 +72,6 @@ export default function Expense() {
             </CloseHeader>
             <Formik
                 initialValues={DefaultExpense}
-                validate={() => console.log("fish sticks")}
                 validationSchema={ExpenseSchema}
                 onSubmit={(values, { setSubmitting }) => {
                     setTimeout(() => {
@@ -90,7 +96,7 @@ export default function Expense() {
                         </LabelInput>
 
                         <AnimateHeight height={values.type === 'single' ? 'auto' : 0}>
-                            <LabelInput type='text' name='amount' label='Amount' />
+                            <LabelInput type='text' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*"/>
                         </AnimateHeight>
 
                         <AnimateHeight height={values.type === 'multiple' ? 'auto' : 0}>
@@ -161,7 +167,7 @@ export default function Expense() {
                         {/* <code>{JSON.stringify(errors, null, 2)}</code>
                         <code>{JSON.stringify(values, null, 2)}</code> */}
 
-                        <button className="contrast" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+                        <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>
                             {(function () {
                                 const grand = grandTotal(values);
                                 return `Add Expense${!!grand ? ' • $' + grand.toFixed(2) : ''}`;

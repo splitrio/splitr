@@ -55,8 +55,8 @@ export default function ItemModal({ item, isOpen, close, apply, remove }) {
                         {({values, touched, errors}) => (
                             <Form>
                                 <LabelInput type='text' name='name' label='Name' placeholder='e.g. Banana, Desk, Camping Gear' />
-                                <LabelInput type='number' name='quantity' label='Quantity' />
-                                <LabelInput type='text' name='price' label='Price' />
+                                <LabelInput type='number' name='quantity' label='Quantity' inputMode="numeric" pattern="[0-9]*" />
+                                <LabelInput type='text' name='price' label='Price' inputMode="decimal" pattern="[0-9.]*" />
 
                                 <div className='grid' style={{ marginTop: '30px' }}>
                                     <button type='submit' className="contrast"><FiCheck className='icon' />

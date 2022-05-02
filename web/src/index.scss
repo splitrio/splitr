@@ -44,25 +44,6 @@ dialog>article {
 }
 
 /**
- * Input
- */
-
-.form-group {
-    display: block;
-    position: relative;
-
-    >label {
-        position: absolute;
-        top: -0.8em;
-        left: 1em;
-        font-size: small;
-        padding: 0 5px;
-        background: linear-gradient(180deg, transparent 45%, var(--background-color) 50%);
-        color: var(--color);
-    }
-}
-
-/**
  * Icons and Interactives
  */
 

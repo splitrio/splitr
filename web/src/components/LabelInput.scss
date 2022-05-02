@@ -1,0 +1,25 @@
+.form-group {
+    display: block;
+    position: relative;
+
+    >label {
+        position: absolute;
+        top: -0.8em;
+        left: 1em;
+        font-size: small;
+        padding: 0 5px;
+        background: linear-gradient(180deg, transparent 45%, var(--background-color) 50%);
+        color: var(--color);
+    }
+}
+
+.error-color {
+    color: var(--form-element-invalid-border-color) !important;
+}
+
+.tooltip-container {
+    display: block;
+    width: 100%;
+    margin-top: calc(var(--spacing) * -0.75);
+    margin-bottom: var(--spacing);
+}

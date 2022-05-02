@@ -48,15 +48,15 @@ export default function ItemModal({ item, isOpen, close, apply, remove }) {
                         <h3>{isEditing ? 'Edit Item' : 'Add Item'}</h3>
                     </CloseHeader>
                     <Formik
-                        initialValues={isEditing ? item : DefaultItem}
+                        initialValues={isEditing ? item : DefaultItem()}
                         validationSchema={ItemSchema}
                         onSubmit={submitItem}
                     >
                         {({values, touched, errors}) => (
-                            <Form>
+                            <Form noValidate>
                                 <LabelInput type='text' name='name' label='Name' placeholder='e.g. Banana, Desk, Camping Gear' />
                                 <LabelInput type='number' name='quantity' label='Quantity' inputMode="numeric" pattern="[0-9]*" />
-                                <LabelInput type='text' name='price' label='Price' inputMode="decimal" pattern="[0-9.]*" />
+                                <LabelInput type='number' name='price' label='Price' inputMode="decimal" pattern="[0-9.]*" />
 
                                 <div className='grid' style={{ marginTop: '30px' }}>
                                     <button type='submit' className="contrast"><FiCheck className='icon' />

@@ -72,7 +72,7 @@ export default function Expense() {
                 </hgroup>
             </CloseHeader>
             <Formik
-                initialValues={DefaultExpense}
+                initialValues={DefaultExpense()}
                 validationSchema={ExpenseSchema}
                 onSubmit={(values, { setSubmitting }) => {
                     setTimeout(() => {
@@ -83,7 +83,7 @@ export default function Expense() {
                 }}
             >
                 {({ values, touched, errors, isSubmitting }) => (
-                    <Form>
+                    <Form noValidate>
                         <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
                         <LabelInput type='date' name='date' label='Date' />
                         <LabelInput as='select' name='split' label='Split' tooltip={<small>{getSplitTooltip(values.split)}</small>}>
@@ -97,7 +97,7 @@ export default function Expense() {
                         </LabelInput>
 
                         <AnimateHeight height={values.type === 'single' ? 'auto' : 0}>
-                            <LabelInput type='text' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*"/>
+                            <LabelInput type='number' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*"/>
                         </AnimateHeight>
 
                         <AnimateHeight height={values.type === 'multiple' ? 'auto' : 0}>
@@ -165,8 +165,9 @@ export default function Expense() {
 
                         </AnimateHeight>
 
-                        {/* <code>{JSON.stringify(errors, null, 2)}</code>
-                        <code>{JSON.stringify(values, null, 2)}</code> */}
+                        <pre>{JSON.stringify(errors, null, 2)}</pre>
+                        <pre>{JSON.stringify(values, null, 2)}</pre>
+                        <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre>
 
                         <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>
                             {(function () {

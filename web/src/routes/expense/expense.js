@@ -14,6 +14,51 @@ import PercentageAmountSelector from '../../components/form/PercentageAmountSele
 
 import './expense.scss';
 
+function isNumeric(value) {
+    if (typeof value === 'number') return !isNaN(value);
+    return !isNaN(value) && !isNaN(parseFloat(value));
+}
+
+function computeSubtotal(values) {
+    return values.items.reduce((total, {price, quantity}) => total + price * quantity, 0) || null;
+}
+
+function displaySubtotal(values) {
+    const subtotal = computeSubtotal(values);
+    if (!subtotal) return '-';
+    return `$${subtotal.toFixed(2)}`;
+}
+
+function computeTotal(values) {
+    const parsePercentAmount = (current, percentAmount) => {
+        if (!current) return null;
+        if (percentAmount.value === '') return current;
+        if (!isNumeric(percentAmount.value)) return null;
+        const value = parseFloat(percentAmount.value);
+        switch (percentAmount.type) {
+            case 'percentage': return current * (1 + value / 100);
+            case 'amount': return current + value;
+            default: return current;
+        }
+    }
+
+    switch (values.type) {
+        case 'single': return !isNumeric(values.amount) ? null : parseFloat(values.amount);
+        case 'multiple':
+            let total = computeSubtotal(values);
+            total = parsePercentAmount(total, values.tax);
+            total = parsePercentAmount(total, values.tip);
+            return total;
+        default: return null;
+    }
+}
+
+function submitText(values) {
+    const total = computeTotal(values);
+    if (!total) return 'Add Expense';
+    return `Add Expense${total ? ' • $' + total.toFixed(2) : ''}`;
+}
+
 export default function Expense() {
     function getSplitTooltip(split) {
         switch (split) {
@@ -104,7 +149,7 @@ export default function Expense() {
                                                     <tr key={item.id} className='click' onClick={() => setEditing(index)}>
                                                         <td>{item.name}</td>
                                                         <td>{item.quantity}</td>
-                                                        <td>{item.price}</td>
+                                                        <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
                                                         <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
                                                     </tr>
                                                 ))}
@@ -126,7 +171,7 @@ export default function Expense() {
                                     <tr>
                                         <th scope="col">Subtotal</th>
                                         <td></td>
-                                        <td>-</td>
+                                        <td>{displaySubtotal(values)}</td>
                                         <td className='button-col'></td>
                                     </tr>
                                 </tfoot>
@@ -142,7 +187,7 @@ export default function Expense() {
                         </Show>
 
                         <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>
-                            Add Expense
+                            {submitText(values)}
                         </button>
                     </Form>
                 )}

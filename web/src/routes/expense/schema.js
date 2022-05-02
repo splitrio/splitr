@@ -6,8 +6,9 @@ const NullableNumber = () => number().transform((value, original) => {
     return value;
 })
     .nullable()
-    .typeError('Not a number!');
-
+    .typeError('Not a number!')
+    .transform((value, originalValue) => (/\s/.test(originalValue) ? NaN : value));
+    
 const NameSchema = string()
     .min(3, 'Too Short!')
     .max(50, 'Too Long!')

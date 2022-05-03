@@ -1,0 +1,15 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-splitr-dev-222809-authRole",
+      "UnauthRoleArn": "arn:aws:iam::249466191846:role/amplify-splitr-dev-222809-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::249466191846:role/amplify-splitr-dev-222809-authRole",
+      "Region": "us-west-1",
+      "DeploymentBucketName": "amplify-splitr-dev-222809-deployment",
+      "UnauthRoleName": "amplify-splitr-dev-222809-unauthRole",
+      "StackName": "amplify-splitr-dev-222809",
+      "StackId": "arn:aws:cloudformation:us-west-1:249466191846:stack/amplify-splitr-dev-222809/d204d440-caa1-11ec-9eee-0637c9dc7907",
+      "AmplifyAppId": "dg72m07z6dzcj"
+    }
+  }
+}

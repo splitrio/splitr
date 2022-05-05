@@ -1,25 +1,53 @@
-import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
+import { motion } from 'framer-motion';
 import './Page.scss';
 
+const pageMotion = {
+    initial: {opacity: 0, y: -50},
+    animate: {opacity: 1, y: 0, transition: {duration: 0.2}},
+    exit: {opacity: 0, y: -50, transition: {duration: 0.2}}
+};
+
 export default function Page(props) {
+    const auth = useAuth();
+    const navigate = useNavigate();
+
+    async function signOut() {
+        try {
+            await auth.signOut();
+            navigate('/login');
+        } catch (e) {
+            toast.error(`Couldn't sign out: ${e.message}`)
+        }
+    }
+
     return (
         <div id="pageContent">
             <nav className="container-fluid">
                 <ul>
-                    <li><Link to="/dashboard" className="contrast"><strong>splitr</strong></Link></li>
+                    <li><Link to="/" className="contrast"><strong>splitr</strong></Link></li>
                 </ul>
             </nav>
-
-            <main id="pageMain" className="container">
+            
+            <motion.main id="pageMain" className="container" initial="initial" animate="animate" exit="exit" variants={pageMotion}>
                 <article className="grid">
                     <div id="page">
                         {props.children}
                     </div>
                 </article>
-            </main>
+            </motion.main>
 
             <footer className="container-fluid">
-                <small>Built with <a href="https://picocss.com" className="secondary">Pico</a></small>
+                <small>
+                    Built with <a href="https://picocss.com" className="secondary">Pico</a>
+                </small>
+                {auth.authenticated &&
+                    <small>
+                        &nbsp;• <span onClick={signOut} role='link' className='click secondary' style={{ '--text-decoration': 'underline' }}>Sign Out</span>
+                    </small>
+                }
             </footer>
         </div>
     );

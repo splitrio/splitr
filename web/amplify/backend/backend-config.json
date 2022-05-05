@@ -26,5 +26,12 @@
         ]
       }
     }
+  },
+  "function": {
+    "preSignUp": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
   }
 }

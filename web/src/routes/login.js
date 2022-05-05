@@ -99,6 +99,9 @@ export default function Login() {
                             <LabelInput type='password' label='Password' name='password' placeholder='Password' autoComplete='password' />
                             <Switch name='rememberMe' label='Remember Me' />
                             <button type="submit" className="contrast" disabled={isSubmitting} aria-busy={isSubmitting}>Login</button>
+                            <div style={{textAlign: 'center'}}>
+                                <small>Don't have an account? Sign up</small>
+                            </div>
                         </Form>
                     </>
                 )}

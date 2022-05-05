@@ -14,6 +14,12 @@
     "categories": {
       "auth": {
         "splitrdae99b6e": {}
+      },
+      "function": {
+        "preSignUp": {
+          "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
+          "s3Key": "amplify-builds/preSignUp-55374571737639745576-build.zip"
+        }
       }
     }
   }

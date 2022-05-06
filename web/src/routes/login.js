@@ -6,15 +6,14 @@ import { bool, object, ref, string } from 'yup';
 import LabelInput from '../components/form/LabelInput';
 import Switch from '../components/form/Switch';
 import Page from '../components/Page';
-import useAuth, { UpdatePasswordError } from '../hooks/useAuth';
+import useAuth from '../hooks/useAuth';
 import Modal from '../components/Modal';
 import { NullableNumber } from '../util/schema';
 import CloseHeader from '../components/CloseHeader';
 
 const LoginState = Object.freeze({
     Login: 0,
-    UpdatePassword: 1,
-    SignUp: 2
+    SignUp: 1
 });
 
 /* ========================
@@ -22,53 +21,21 @@ const LoginState = Object.freeze({
  * ========================
  */
 
-const PasswordSchemas = {
-    password: string().min(8, 'Must be at least 8 characters long!').required('Required'),
-    confirmPassword: string().oneOf([ref('password')], "Passwords don't match!").required('Required!')
-};
-
 const LoginSchema = object({
-    email: string().email('Enter a valid email').required('Required!'),
+    email: string().email('Enter a valid email!').required('Required!'),
     password: string().required('Required!'),
     rememberMe: bool()
-});
-
-const UpdatePasswordSchema = oldPassword => object({
-    password: PasswordSchemas.password.notOneOf([oldPassword], "You must choose a new password!"),
-    confirmPassword: PasswordSchemas.confirmPassword
 });
 
 const SignUpSchema = object({
     firstName: string().required('Required!'),
     lastName: string().required('Required!'),
     email: string().email('Enter a valid email!').required('Required!'),
-    password: PasswordSchemas.password,
-    confirmPassword: PasswordSchemas.confirmPassword,
+    password: string().min(8, 'Must be at least 8 characters long!').required('Required'),
+    confirmPassword: string().oneOf([ref('password')], "Passwords don't match!").required('Required!'),
     hourlyWage: NullableNumber().positive('Must be positive!').required('Required!'),
     accessKey: string().required('Enter an access key!')
 });
-
-const UpdatePasswordModal = ({ isOpen, oldPassword, onSubmit }) => (
-    <Modal isOpen={isOpen}>
-        <hgroup>
-            <h2>Update your password</h2>
-            <h2>It looks like your using a temporary password.</h2>
-        </hgroup>
-        <Formik
-            initialValues={{ password: '', confirmPassword: '' }}
-            validationSchema={UpdatePasswordSchema(oldPassword)}
-            onSubmit={onSubmit}
-        >
-            {({ errors, isSubmitting }) => (
-                <Form noValidate>
-                    <LabelInput type='password' label='Password' name='password' placeholder='New Password' />
-                    <LabelInput type='password' label='Confirm Password' name='confirmPassword' placeholder='Confirm Password' />
-                    <button type="submit" className="contrast" disabled={Object.keys(errors).length > 0 || isSubmitting} aria-busy={isSubmitting}>Update Password</button>
-                </Form>
-            )}
-        </Formik>
-    </Modal>
-);
 
 const SignUpModal = ({ isOpen, onClose, onSubmit }) => (
     <Modal isOpen={isOpen} shouldCloseOnOverlayClick={true} onClose={onClose}>
@@ -128,21 +95,7 @@ export default function Login() {
             await auth.signIn(values.email, values.password, values.rememberMe);
             navigate(from, { replace: true });
         } catch (error) {
-            if (error instanceof UpdatePasswordError) setState(LoginState.UpdatePassword);
-            else toast.error(`Failed to log in: ${error.message}`)
-        }
-        setSubmitting(false);
-    }
-
-    async function updatePassword(values, { setSubmitting }) {
-        // Small pause for effect
-        await new Promise(r => setTimeout(r, 200));
-        try {
-            await auth.updatePassword(values.password);
-            setState(LoginState.Login);
-            navigate(from, { replace: true });
-        } catch (error) {
-            toast.error(`Failed to update password: ${error.message}`);
+            toast.error(`Failed to log in: ${error.message}`)
         }
         setSubmitting(false);
     }
@@ -183,7 +136,6 @@ export default function Login() {
             >
                 {({ values, isSubmitting }) => (
                     <>
-                        <UpdatePasswordModal isOpen={state === LoginState.UpdatePassword} oldPassword={values.password} onSubmit={updatePassword} />
                         <SignUpModal isOpen={state === LoginState.SignUp} onSubmit={signUp} onClose={() => setState(LoginState.Login)} />
                         <Form noValidate>
                             <LabelInput type='text' label='Email' name='email' placeholder='Email' autoComplete='email' />

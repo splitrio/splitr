@@ -3,23 +3,17 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
-/**
- * Thrown during sign-in if the user needs to update their (temporary) password
- */
-class UpdatePasswordError extends Error {
-    constructor(message = "", ...args) {
-        super(message, ...args);
-        this.message = message;
-    }
-}
-
 function getKey(keyName, defaultValue) {
     let value = localStorage.getItem(keyName);
     if (value === null)
         value = sessionStorage.getItem(keyName);
     if (value === null)
         return defaultValue;
-    return JSON.parse(value);
+    try {
+        return JSON.parse(value);
+    } catch {
+        return defaultValue;
+    }
 }
 
 function setKey(keyName, value) {
@@ -43,7 +37,7 @@ function configureAuth(rememberMe) {
 }
 
 async function loadAuth({ setUser, setAuthenticated }) {
-    configureAuth(getKey(RememberMeKey, false));
+    configureAuth(getKey(RememberMeKey, true));
     try {
         const user = await Auth.currentAuthenticatedUser();
         const session = await Auth.currentSession();
@@ -98,7 +92,7 @@ function AuthProvider({ children }) {
             const user = await Auth.signIn(email, password);
             setUser(user);
             if (user.challengeName === 'NEW_PASSWORD_REQUIRED')
-                throw new UpdatePasswordError('Password needs to be updated.');
+                throw new Error('Admin accounts are currently disabled.');
             setAuthenticated(true);
         },
 
@@ -123,4 +117,4 @@ export default function useAuth() {
     return useContext(AuthContext);
 }
 
-export { AuthProvider, UpdatePasswordError };
+export { AuthProvider };

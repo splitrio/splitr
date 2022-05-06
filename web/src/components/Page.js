@@ -45,7 +45,7 @@ export default function Page(props) {
                 </small>
                 {auth.authenticated &&
                     <small>
-                        &nbsp;• <span onClick={signOut} role='link' className='click secondary' style={{ '--text-decoration': 'underline' }}>Sign Out</span>
+                        &nbsp;• <span onClick={signOut} className='link secondary'>Sign Out</span>
                     </small>
                 }
             </footer>

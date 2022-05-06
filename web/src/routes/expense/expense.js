@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import Page from '../../components/Page';
 import Show from '../../components/Show';
 import ItemModal from './ItemModal';
-import CloseHeader from '../../components/CloseNav';
+import CloseHeader from '../../components/CloseHeader';
 import { DefaultExpense, ExpenseSchema } from './schema';
 import LabelInput from '../../components/form/LabelInput';
 import Switch from '../../components/form/Switch';

@@ -1,10 +1,10 @@
 {
   "version": "1",
   "cognitoConfig": {
-    "identityPoolName": "splitrdae99b6e_identitypool_dae99b6e",
+    "identityPoolName": "splitr2ac25091_identitypool_2ac25091",
     "allowUnauthenticatedIdentities": false,
-    "resourceNameTruncated": "splitrdae99b6e",
-    "userPoolName": "splitrdae99b6e_userpool_dae99b6e",
+    "resourceNameTruncated": "splitr2ac25091",
+    "userPoolName": "splitr2ac25091_userpool_2ac25091",
     "autoVerifiedAttributes": [
       "email"
     ],
@@ -20,7 +20,9 @@
     "passwordPolicyMinLength": 8,
     "passwordPolicyCharacters": [],
     "requiredAttributes": [
-      "email"
+      "email",
+      "family_name",
+      "given_name"
     ],
     "aliasAttributes": [],
     "userpoolClientGenerateSecret": false,
@@ -31,42 +33,19 @@
     "userpoolClientReadAttributes": [
       "email"
     ],
-    "userpoolClientLambdaRole": "splitrdae99b6e_userpoolclient_lambda_role",
+    "userpoolClientLambdaRole": "splitr2ac25091_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "dae99b6e",
-    "resourceName": "splitrdae99b6e",
+    "sharedId": "2ac25091",
+    "resourceName": "splitr2ac25091",
     "authSelections": "identityPoolAndUserPool",
-    "useDefault": "manual",
+    "useDefault": "default",
     "usernameAttributes": [
       "email"
     ],
+    "triggers": {},
     "userPoolGroupList": [],
     "serviceName": "Cognito",
     "usernameCaseSensitive": false,
-    "useEnabledMfas": true,
-    "authRoleArn": {
-      "Fn::GetAtt": [
-        "AuthRole",
-        "Arn"
-      ]
-    },
-    "unauthRoleArn": {
-      "Fn::GetAtt": [
-        "UnauthRole",
-        "Arn"
-      ]
-    },
-    "breakCircularDependency": true,
-    "dependsOn": [],
-    "thirdPartyAuth": false,
-    "userPoolGroups": false,
-    "adminQueries": false,
-    "triggers": {},
-    "hostedUI": false,
-    "authProviders": [],
-    "parentStack": {
-      "Ref": "AWS::StackId"
-    },
-    "permissions": []
+    "useEnabledMfas": true
   }
 }

@@ -76,6 +76,21 @@ function AuthProvider({ children }) {
 
     const authObject = {
         authenticated: authenticated,
+
+        async signUp(accountInfo) {
+            await Auth.signUp({
+                username: accountInfo.email,
+                password: accountInfo.password,
+                attributes: {
+                    email: accountInfo.email,
+                    given_name: accountInfo.firstName,
+                    family_name: accountInfo.lastName,
+                    'custom:hourlyWage': accountInfo.hourlyWage,
+                    'custom:accessKey': accountInfo.accessKey
+                }
+            });
+        },
+
         async signIn(email, password, rememberMe) {
             if (authenticated) return;
             setKey(RememberMeKey, rememberMe);

@@ -1,6 +1,6 @@
 {
   "auth": {
-    "splitrdae99b6e": {
+    "splitr2ac25091": {
       "service": "Cognito",
       "providerPlugin": "awscloudformation",
       "dependsOn": [],
@@ -11,7 +11,9 @@
           "EMAIL"
         ],
         "signupAttributes": [
-          "EMAIL"
+          "EMAIL",
+          "FAMILY_NAME",
+          "GIVEN_NAME"
         ],
         "passwordProtectionSettings": {
           "passwordPolicyMinLength": 8,

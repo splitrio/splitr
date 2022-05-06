@@ -12,14 +12,14 @@
       "AmplifyAppId": "dg72m07z6dzcj"
     },
     "categories": {
-      "auth": {
-        "splitrdae99b6e": {}
-      },
       "function": {
         "preSignUp": {
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
-          "s3Key": "amplify-builds/preSignUp-55374571737639745576-build.zip"
+          "s3Key": "amplify-builds/preSignUp-426146336876796b4334-build.zip"
         }
+      },
+      "auth": {
+        "splitr2ac25091": {}
       }
     }
   }

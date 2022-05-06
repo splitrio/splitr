@@ -67,6 +67,12 @@ dialog>article {
     cursor: pointer;
 }
 
+.link {
+    @extend .click;
+    @extend [role=link];
+    --text-decoration: underline;
+}
+
 /**
  * Modal Animations
  */

@@ -12,11 +12,11 @@ const customModalStyles = {
     }
 };
 
-export default function Modal({ isOpen, close, shouldCloseOnOverlayClick=false, children }) {
+export default function Modal({ isOpen, onClose, shouldCloseOnOverlayClick=false, children }) {
     return <ReactModal
         closeTimeoutMS={200}
         isOpen={isOpen}
-        onRequestClose={close}
+        onRequestClose={onClose}
         style={customModalStyles}
         shouldCloseOnOverlayClick={shouldCloseOnOverlayClick}
     >

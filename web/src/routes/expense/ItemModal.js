@@ -2,7 +2,7 @@ import { FiCheck, FiTrash } from 'react-icons/fi';
 import { Formik, Form } from 'formik';
 import { nanoid } from 'nanoid'
 import Modal from '../../components/Modal';
-import CloseHeader from '../../components/CloseNav';
+import CloseHeader from '../../components/CloseHeader';
 
 import LabelInput from '../../components/form/LabelInput';
 import { DefaultItem, ItemSchema } from './schema';
@@ -23,7 +23,7 @@ export default function ItemModal({ item, isOpen, close, apply, remove }) {
     }
 
     return (
-        <Modal isOpen={isOpen} close={close} shouldCloseOnOverlayClick={true}>
+        <Modal isOpen={isOpen} onClose={close} shouldCloseOnOverlayClick={true}>
             <CloseHeader onClick={() => close()}>
                 <h3>{isEditing ? 'Edit Item' : 'Add Item'}</h3>
             </CloseHeader>

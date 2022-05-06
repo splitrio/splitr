@@ -27,7 +27,7 @@ export default function PercentageAmountSelector({ name, label, placeholder }) {
                     <option value="amount">Flat Amount</option>
                 </LabelInput>
                 <LabelInput
-                    type='string'
+                    type='text'
                     name={valuePath}
                     label={get(values, typePath) === 'percentage' ? 'Percentage' : 'Amount'}
                     placeholder={placeholder}

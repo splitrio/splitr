@@ -3,7 +3,7 @@ import awsgi
 from flask_cors import CORS
 from flask import Flask, jsonify, make_response, request
 from validation import ExpenseValidator
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, BadRequest
 
 app = Flask(__name__)
 CORS(app)
@@ -30,9 +30,7 @@ def handle_exception(e: HTTPException):
 def create_expense():
     client_expense = request.get_json()
     if not ClientExpenseValidator.validate(client_expense):
-        return jsonify({
-            'errors': ClientExpenseValidator.errors
-        }), 400
+        raise BadRequest(ClientExpenseValidator.errors)
     return jsonify("Request successful!")
     
 def handler(event, context):

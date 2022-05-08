@@ -4,7 +4,7 @@ from uuid import uuid4
 import os
 
 from pynamodb.models import Model
-from pynamodb.attributes import Attribute, UnicodeAttribute, DiscriminatorAttribute, MapAttribute, NumberAttribute
+from pynamodb.attributes import Attribute, UnicodeAttribute, DiscriminatorAttribute, MapAttribute, NumberAttribute, ListAttribute
 from pynamodb.constants import STRING
 
 DATE_FORMAT = '%Y-%m-%d'
@@ -24,12 +24,24 @@ class BaseModel(Model):
     type = DiscriminatorAttribute()
 
 class PercentageAmount(MapAttribute):
+    """
+    Represents either a percentage or an amount
+    """
     type = UnicodeAttribute(default='Percentage')
     value = NumberAttribute(null=True)
 
+class Item(MapAttribute):
+    """
+    Represents a single item associated with an expense
+    """
+    id = UnicodeAttribute()
+    name = UnicodeAttribute()
+    quantity = NumberAttribute()
+    price = NumberAttribute()
+
 class DateAttribute(Attribute[date]):
     """
-    An attribute for storing a UTC Date
+    Represents a date in time
     """
     attr_type = STRING
 
@@ -39,16 +51,17 @@ class DateAttribute(Attribute[date]):
     def deserialize(self, value: str) -> date:
         return datetime.strptime(value, DATE_FORMAT).date()
 
-
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """
     Models metadata about an expense
     """
     name = UnicodeAttribute()
     date = DateAttribute()
+    owner = UnicodeAttribute()
     split = UnicodeAttribute()
     expenseType = UnicodeAttribute()
     amount = NumberAttribute(null=True)
+    items = ListAttribute(of=Item, null=True)
     tax = PercentageAmount(null=True)
     tip = PercentageAmount(null=True)
 
@@ -56,17 +69,3 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     def new(cls, id: Optional[str]) -> 'ExpenseModel':
         if id is None: id = _id()
         return cls(id, 'Expense')
-    
-
-class ItemModel(BaseModel, DiscriminatorAttribute='Item'):
-    """
-    Models a single item associated with an expense
-    """
-    name = UnicodeAttribute()
-    quantity = NumberAttribute()
-    price = NumberAttribute()
-
-    @classmethod
-    def new(cls, expenseId: str, itemId: Optional[str]) -> 'ItemModel':
-        if itemId is None: itemId = _id()
-        return cls(expenseId, f'Item#{itemId}')

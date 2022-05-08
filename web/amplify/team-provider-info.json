@@ -20,7 +20,7 @@
         },
         "splitrapi": {
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
-          "s3Key": "amplify-builds/splitrapi-7138673131716762786a-build.zip"
+          "s3Key": "amplify-builds/splitrapi-68522b49506736663867-build.zip"
         }
       },
       "auth": {

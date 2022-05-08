@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "auth": {
+      "splitr2ac25091": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    },
+    "storage": {
+      "splitr": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "lambdaLayers": []
+}

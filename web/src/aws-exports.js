@@ -27,6 +27,20 @@ const awsmobile = {
     },
     "aws_cognito_verification_mechanisms": [
         "EMAIL"
+    ],
+    "aws_cloud_logic_custom": [
+        {
+            "name": "splitr",
+            "endpoint": "https://eawc5goc3j.execute-api.us-west-1.amazonaws.com/dev",
+            "region": "us-west-1"
+        }
+    ],
+    "aws_dynamodb_all_tables_region": "us-west-1",
+    "aws_dynamodb_table_schemas": [
+        {
+            "tableName": "expenses-dev",
+            "region": "us-west-1"
+        }
     ]
 };
 

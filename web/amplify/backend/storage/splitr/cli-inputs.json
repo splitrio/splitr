@@ -1,0 +1,10 @@
+{
+  "resourceName": "splitr",
+  "tableName": "expenses",
+  "partitionKey": {
+    "fieldName": "id",
+    "fieldType": "string"
+  },
+  "gsi": [],
+  "triggerFunctions": []
+}

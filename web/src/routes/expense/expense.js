@@ -13,6 +13,7 @@ import Switch from '../../components/form/Switch';
 import PercentageAmountSelector from '../../components/form/PercentageAmountSelector';
 
 import './expense.scss';
+import { API } from 'aws-amplify';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -97,12 +98,16 @@ export default function Expense() {
             <Formik
                 initialValues={DefaultExpense()}
                 validationSchema={ExpenseSchema}
-                onSubmit={(values, { setSubmitting }) => {
-                    setTimeout(() => {
-                        values = ExpenseSchema.cast(values);
-                        alert(JSON.stringify(values, null, 2));
+                onSubmit={async (values, { setSubmitting }) => {
+                    try {
+                        const result = await API.post('splitr', '/expenses', {
+                            body: ExpenseSchema.cast(values)
+                        });
+                        alert(JSON.stringify(result, null, 2));
                         setSubmitting(false);
-                    }, 400);
+                    } catch (e) {
+                        console.log(e);
+                    }
                 }}
             >
                 {({ values, errors, isSubmitting }) => (

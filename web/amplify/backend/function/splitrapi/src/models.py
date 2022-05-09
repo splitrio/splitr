@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from datetime import date, datetime
 from uuid import uuid4
 import os
@@ -20,7 +20,7 @@ class BaseModel(Model):
         table_name = os.environ.get('STORAGE_SPLITR_NAME')
 
     id = UnicodeAttribute(hash_key=True)
-    sk = UnicodeAttribute(sort_key=True)
+    sk = UnicodeAttribute(range_key=True)
     type = DiscriminatorAttribute()
 
 class PercentageAmount(MapAttribute):
@@ -29,15 +29,6 @@ class PercentageAmount(MapAttribute):
     """
     type = UnicodeAttribute(default='Percentage')
     value = NumberAttribute(null=True)
-
-class Item(MapAttribute):
-    """
-    Represents a single item associated with an expense
-    """
-    id = UnicodeAttribute()
-    name = UnicodeAttribute()
-    quantity = NumberAttribute()
-    price = NumberAttribute()
 
 class DateAttribute(Attribute[date]):
     """
@@ -50,6 +41,20 @@ class DateAttribute(Attribute[date]):
 
     def deserialize(self, value: str) -> date:
         return datetime.strptime(value, DATE_FORMAT).date()
+
+class Item(MapAttribute):
+    """
+    Represents a single item associated with an expense
+    """
+    id = UnicodeAttribute()
+    name = UnicodeAttribute()
+    quantity = NumberAttribute()
+    price = NumberAttribute()
+
+    @classmethod
+    def new(cls, id: Optional[str]=None, **attr: Any) -> 'Item':
+        if id is None: id = _id()
+        return cls(id=id, **attr)
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """
@@ -66,6 +71,6 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     tip = PercentageAmount(null=True)
 
     @classmethod
-    def new(cls, id: Optional[str]) -> 'ExpenseModel':
+    def new(cls, id: Optional[str]=None, **attr: Any) -> 'ExpenseModel':
         if id is None: id = _id()
-        return cls(id, 'Expense')
+        return cls(id, 'Expense', **attr)

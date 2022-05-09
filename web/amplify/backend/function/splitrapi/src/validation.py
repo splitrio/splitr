@@ -110,7 +110,7 @@ Schema common to expenses containing multiple items (payments)
 
 def _create_validator(schema) -> Validator:
     v = Validator(schema)
-    v.allow_unknown = True
+    v.purge_unknown = True
     v.require_all = True
     return v
 
@@ -139,3 +139,16 @@ class ExpenseValidator:
     @property
     def errors(self):
         return self._errors
+
+    @property
+    def document(self):
+        """
+        Returns the normalized document passed in to `validate`.
+
+        Preconditions: Last call to `validate` returned `True`
+        """
+        doc = {}
+        doc.update(self._BaseValidator.document)
+        doc.update(self._PolymorphicValidators[doc['type']].document)
+        return doc
+        

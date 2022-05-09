@@ -1,9 +1,11 @@
 import json
 import awsgi
 from flask_cors import CORS
-from flask import Flask, jsonify, make_response, request
-from validation import ExpenseValidator
+from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException, BadRequest
+
+import models
+from validation import ExpenseValidator
 
 app = Flask(__name__)
 CORS(app)
@@ -28,10 +30,32 @@ def handle_exception(e: HTTPException):
 
 @app.route(BASE_ROUTE, methods=['POST'])
 def create_expense():
-    client_expense = request.get_json()
-    if not ClientExpenseValidator.validate(client_expense):
+    return jsonify({k:v for k, v in request.headers.items()})
+    data = request.get_json()
+    if not ClientExpenseValidator.validate(data):
         raise BadRequest(ClientExpenseValidator.errors)
-    return jsonify("Request successful!")
+    data = ClientExpenseValidator.document
+
+    # Validation succeeded, add to DynamoDB
+    expense = models.ExpenseModel.new()
+    expense.name = data['name']
+    expense.date = data['date']
+    expense.split = data['split']
+    expense.expenseType = data['type']
+    
+    # Seperate fields defined for either single or multiple item expenses
+    if expense.expenseType == 'single':
+        expense.amount = data['amount']
+    else:
+        expense.items = [models.Item.new(
+            name=item['name'],
+            quantity=item['quantity'],
+            price=item['price'])
+            for item in data['items']]
+        expense.tax = models.PercentageAmount(**data['tax'])
+        expense.tip = models.PercentageAmount(**data['tip'])
+    expense.save()
+    return expense.serialize()
     
 def handler(event, context):
     return awsgi.response(app, event, context)

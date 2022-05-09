@@ -70,6 +70,7 @@ function AuthProvider({ children }) {
 
     const authObject = {
         authenticated: authenticated,
+        user() { return user },
 
         async signUp(accountInfo) {
             await Auth.signUp({

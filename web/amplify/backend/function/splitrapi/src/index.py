@@ -1,5 +1,6 @@
 import json
 import awsgi
+import pprint
 from flask_cors import CORS
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException, BadRequest
@@ -28,17 +29,22 @@ def handle_exception(e: HTTPException):
     response.content_type = "application/json"
     return response
 
+def get_user_details():
+    return request.environ['awsgi.event']['requestContext']['authorizer']['claims']
+
 @app.route(BASE_ROUTE, methods=['POST'])
 def create_expense():
-    return jsonify({k:v for k, v in request.headers.items()})
     data = request.get_json()
     if not ClientExpenseValidator.validate(data):
         raise BadRequest(ClientExpenseValidator.errors)
     data = ClientExpenseValidator.document
 
+    user = get_user_details()
+
     # Validation succeeded, add to DynamoDB
     expense = models.ExpenseModel.new()
     expense.name = data['name']
+    expense.owner = user['cognito:username']
     expense.date = data['date']
     expense.split = data['split']
     expense.expenseType = data['type']

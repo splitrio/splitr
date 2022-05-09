@@ -14,6 +14,7 @@ import PercentageAmountSelector from '../../components/form/PercentageAmountSele
 
 import './expense.scss';
 import { API } from 'aws-amplify';
+import useAuth from '../../hooks/useAuth';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -85,6 +86,7 @@ export default function Expense() {
             toast.error('Add at least one item!');
     }
 
+    const auth = useAuth();
     const [editing, setEditing] = useState(-1);
 
     return (
@@ -100,7 +102,12 @@ export default function Expense() {
                 validationSchema={ExpenseSchema}
                 onSubmit={async (values, { setSubmitting }) => {
                     try {
+                        const user = auth.user();
+                        const token = user.signInUserSession.idToken.jwtToken;
                         const result = await API.post('splitr', '/expenses', {
+                            headers: {
+                                auth: token
+                            },
                             body: ExpenseSchema.cast(values)
                         });
                         alert(JSON.stringify(result, null, 2));

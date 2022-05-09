@@ -38,7 +38,7 @@ const awsmobile = {
     "aws_dynamodb_all_tables_region": "us-west-1",
     "aws_dynamodb_table_schemas": [
         {
-            "tableName": "expenses-dev",
+            "tableName": "splitr-dev",
             "region": "us-west-1"
         }
     ]

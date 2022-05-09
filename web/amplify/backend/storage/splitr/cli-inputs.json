@@ -1,8 +1,12 @@
 {
   "resourceName": "splitr",
-  "tableName": "expenses",
+  "tableName": "splitr",
   "partitionKey": {
     "fieldName": "id",
+    "fieldType": "string"
+  },
+  "sortKey": {
+    "fieldName": "sk",
     "fieldType": "string"
   },
   "gsi": [],

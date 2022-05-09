@@ -18,6 +18,9 @@ class BaseModel(Model):
     """
     class Meta:
         table_name = os.environ.get('STORAGE_SPLITR_NAME')
+        region = os.environ.get('REGION')
+        write_capacity_units = 5
+        read_capacity_units = 5
 
     id = UnicodeAttribute(hash_key=True)
     sk = UnicodeAttribute(range_key=True)

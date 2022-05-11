@@ -106,7 +106,7 @@ export default function Expense() {
                         const token = user.signInUserSession.idToken.jwtToken;
                         const result = await API.post('splitr', '/expenses', {
                             headers: {
-                                auth: token
+                                Authorization: token
                             },
                             body: ExpenseSchema.cast(values)
                         });

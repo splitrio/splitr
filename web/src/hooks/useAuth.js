@@ -74,7 +74,7 @@ function AuthProvider({ children }) {
                 throw Error(`User must be authenticated to use requested API: ${path}`);
             
             const authHeaders = authenticate ? {
-                auth: user.signInUserSession.idToken.jwtToken
+                Authorization: user.signInUserSession.idToken.jwtToken
             } : {}
 
             return await method.call(API, 'splitr', path, {

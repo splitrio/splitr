@@ -43,7 +43,7 @@ export default function Page(props) {
                 <small>
                     Built with <a href="https://picocss.com" className="secondary">Pico</a>
                 </small>
-                {auth.authenticated &&
+                {auth.authenticated() &&
                     <small>
                         &nbsp;• <span onClick={signOut} className='link secondary'>Sign Out</span>
                     </small>

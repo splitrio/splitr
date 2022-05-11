@@ -85,7 +85,7 @@ export default function Login() {
 
     // If we are already authenticated, don't show the log in screen under any circumstances,
     // instead navigating to the home screen
-    if (auth.authenticated)
+    if (auth.authenticated())
         return <Navigate to='/' replace />
 
     async function login(values, { setSubmitting }) {

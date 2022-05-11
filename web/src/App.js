@@ -10,7 +10,7 @@ import useAuth, { AuthProvider } from './hooks/useAuth';
 function RequireAuth({ loginPath }) {
     const auth = useAuth();
     const location = useLocation();
-    if (!auth.authenticated)
+    if (!auth.authenticated())
         return <Navigate to={loginPath} replace state={{ from: location.pathname }} />;
     else return <Outlet />;
 }

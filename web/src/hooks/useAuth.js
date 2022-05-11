@@ -1,4 +1,4 @@
-import { Auth } from "aws-amplify";
+import { API, Auth } from "aws-amplify";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
@@ -68,8 +68,24 @@ function AuthProvider({ children }) {
             </div>
         );
 
-    const authObject = {
-        authenticated: authenticated,
+    function doApi(method) {
+        return async function api(path, request, authenticate=true) {
+            if (authenticate && !authenticated)
+                throw Error(`User must be authenticated to use requested API: ${path}`);
+            
+            const authHeaders = authenticate ? {
+                auth: user.signInUserSession.idToken.jwtToken
+            } : {}
+
+            return await method.call(API, 'splitr', path, {
+                headers: {...authHeaders},
+                ...request
+            });
+        }
+    }
+
+    const authObject = Object.freeze({
+        authenticated() { return authenticated },
         user() { return user },
 
         async signUp(accountInfo) {
@@ -108,8 +124,13 @@ function AuthProvider({ children }) {
             await Auth.signOut();
             setAuthenticated(false);
             setUser(null);
-        }
-    };
+        },
+
+        api: Object.freeze({
+            get: doApi(API.get),
+            post: doApi(API.post)
+        })
+    });
 
     return <AuthContext.Provider value={authObject}>{children}</AuthContext.Provider>;
 }

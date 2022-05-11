@@ -2,11 +2,13 @@ from datetime import date
 from dateutil import parser
 from cerberus import Validator
 
+DATE_FORMAT = '%Y-%m-%d'
 
-def _no_future(field, value: date, error):
-    if value > date.today():
-        error(field, "Date cannot be in the future")
-
+def _coerce_no_future(value: str):
+    parsed = parser.isoparse(value).date()
+    if parsed > date.today():
+        raise Exception("Date cannot be in the future")
+    return parsed.strftime(DATE_FORMAT)
 
 _PercentageAmountSchema = {
     'type': {
@@ -59,9 +61,9 @@ _ExpenseSchemaBase = {
         'empty': False
     },
     'date': {
-        'type': 'date',
-        'coerce': lambda v: parser.isoparse(v).date(),
-        'check_with': _no_future
+        'type': 'string',
+        'coerce': _coerce_no_future,
+        'empty': False
     },
     'split': {
         'type': 'string',

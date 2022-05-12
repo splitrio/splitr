@@ -53,7 +53,7 @@ class UserStatus(MapAttribute):
     Represents information about whether or not a user has payed for an expense.
     """
     user = UnicodeAttribute()
-    paid = BooleanAttribute(default=False)
+    paid = BooleanAttribute()
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """
@@ -100,7 +100,7 @@ class ExpenseUserModel(BaseModel, discriminator='ExpenseUser'):
 
     PK:     Expense#<EXPENSE_ID>
     SK:     User#<USER_ID>
-    tag:    {Owner|Payer}#<USER_ID>{#Done}
+    tag:    {Owner|Payer}#<USER_ID>{#Past}
     """
     tag = UnicodeAttribute()
     date = UnicodeAttribute()

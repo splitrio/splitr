@@ -58,8 +58,7 @@ const DefaultExpense = () => ({
     amount: '',
     items: [],
     tax: { type: 'percentage', value: 10.15 },
-    tip: { type: 'percentage', value: '' },
-    isSplit: false
+    tip: { type: 'percentage', value: '' }
 });
 
 export { ItemSchema, ExpenseSchema, DefaultItem, DefaultExpense };

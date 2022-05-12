@@ -10,7 +10,7 @@ flask = "*"
 flask-cors = "*"
 cerberus = "*"
 pynamodb = "*"
-pynamodb-encoder = "*"
+pynamodb-encoder = {path = "./pynamodb-encoder"}
 
 [requires]
 python_version = "3.8"

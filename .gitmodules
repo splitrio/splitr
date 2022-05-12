@@ -1,0 +1,3 @@
+[submodule "web/amplify/backend/function/splitrapi/pynamodb-encoder"]
+	path = web/amplify/backend/function/splitrapi/pynamodb-encoder
+	url = https://github.com/jacobrobertsbaca/pynamodb-encoder.git

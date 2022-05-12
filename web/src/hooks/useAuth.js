@@ -1,5 +1,6 @@
 import { API, Auth } from "aws-amplify";
 import { createContext, useContext, useEffect, useState } from "react";
+import LoadingBlock from "../components/LoadingBlock";
 
 const AuthContext = createContext();
 
@@ -61,12 +62,8 @@ function AuthProvider({ children }) {
     }, []);
 
     // Show loading indicator while authentication state is loading
-    if (loading)
-        return (
-            <div style={{ width: '100%', height: '100%', textAlign: 'center' }}>
-                <span style={{ position: 'relative', top: '50%' }} aria-busy={true} />
-            </div>
-        );
+    if (loading) 
+        return <LoadingBlock />
 
     function doApi(method) {
         return async function api(path, request, authenticate=true) {

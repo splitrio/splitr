@@ -9,7 +9,6 @@ import ItemModal from './ItemModal';
 import CloseHeader from '../../components/CloseHeader';
 import { DefaultExpense, ExpenseSchema } from './schema';
 import LabelInput from '../../components/form/LabelInput';
-import Switch from '../../components/form/Switch';
 import PercentageAmountSelector from '../../components/form/PercentageAmountSelector';
 
 import './expense.scss';
@@ -192,10 +191,6 @@ export default function Expense() {
                             <PercentageAmountSelector name='tax' label='Tax' />
                             <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
 
-                        </Show>
-
-                        <Show when={values.split !== 'individually'}>
-                            <Switch name='isSplit' label='Already Split' showTooltip={values.isSplit} tooltip="Everyone has already paid for this expense." />
                         </Show>
 
                         <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>

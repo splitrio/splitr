@@ -7,13 +7,14 @@ import os
 import boto3
 from flask_cors import CORS
 from flask import Flask, jsonify, request
-from werkzeug.exceptions import HTTPException, BadRequest
+from werkzeug.exceptions import HTTPException, BadRequest, NotFound
 
 import models
 from validation import ExpenseValidator
 
 from pynamodb.transactions import TransactWrite
 from pynamodb.connection import Connection
+from pynamodb.exceptions import DoesNotExist
 import pynamodb_encoder.encoder as encoder
 
 cognito = boto3.client('cognito-idp')
@@ -45,56 +46,6 @@ def handle_exception(e: HTTPException):
 
 def get_user_details():
     return request.environ['awsgi.event']['requestContext']['authorizer']['claims']
-
-@app.route(BASE_ROUTE, methods=['POST'])
-def create_expense():
-    data = request.get_json()
-    if not ClientExpenseValidator.validate(data):
-        raise BadRequest(ClientExpenseValidator.errors)
-    data = ClientExpenseValidator.document
-
-    user_info = get_user_details()
-    user_id = user_info['cognito:username']
-
-    # Validation succeeded, create ExpenseModel from client input
-    expense = models.ExpenseModel.new()
-    expense.name = data['name']
-    expense.owner = user_id
-    expense.date = data['date']
-    expense.split = data['split']
-    expense.expenseType = data['type']
-    
-    # Seperate fields are defined for either single or multiple item expenses
-    if expense.expenseType == 'single':
-        expense.amount = data['amount']
-    else:
-        expense.items = [models.Item.new(
-            name=item['name'],
-            quantity=item['quantity'],
-            price=item['price'])
-            for item in data['items']]
-        expense.tax = models.PercentageAmount(**data['tax'])
-        expense.tip = models.PercentageAmount(**data['tip'])
-
-    # Get all users who are a part of this transaction to add into DynamoDB
-    # Currently, this means everyone (except for individual expenses, in which case it is only the owning user)
-    if expense.split == 'individually': user_ids = {user_id}
-    else:
-        cognito_users = cognito.list_users(UserPoolId=USER_POOL_ID)
-        user_ids = {user['Username'] for user in cognito_users['Users']}
-    users = [models.ExpenseUserModel.new(expense, id, id == user_id) for id in user_ids]
-
-    # Add payment status information to expense model
-    expense.users = [models.UserStatus(user=id, paid=False) for id in user_ids if id != user_id]
-
-    # When we write an expense to the database, we must write associated users as entries to the table as well
-    # We will use a transaction to do this to ensure that all writes occur atomically
-    with TransactWrite(connection=connection) as transaction:
-        transaction.save(expense)
-        for user in users:
-            transaction.save(user)
-
-    return jsonify(Encoder.encode(expense))
 
 class UserInfo(TypedDict):
     firstName: str
@@ -151,7 +102,7 @@ def resolve_expense_total(expense: Dict[str, Any]) -> float:
         return total
     else: raise Exception(f'Invalid expense type: {expense["expenseType"]}')
 
-def resolve_expense_contribution(expense: Dict[str, Any], total: float, user_id: str, users: Dict[str, UserInfo]) -> float:
+def resolve_expense_contribution(expense: Dict[str, Any], total: float, user_id: str) -> float:
     """
     Calculates the contribution of a user towards an expense.
     @expense: The encoded, un-transformed expense object
@@ -162,30 +113,90 @@ def resolve_expense_contribution(expense: Dict[str, Any], total: float, user_id:
         Must map `user_id` and all users inside `expense['users']`
     """
     if expense['split'] == 'individually': return total
-    elif expense['split'] == 'equally': return total / (len(expense['users']) + 1)      # + 1 for expense owner
+    elif expense['split'] == 'equally': return total / len(expense['users'])
     elif expense['split'] == 'proportionally':
-        my_wage = users[user_id]['wage']
-        total_wages = my_wage + sum(users[user_status['user']]['wage'] for user_status in expense['users'])
+        my_wage = next(user['wage'] for user in expense['users'] if user['user'] == user_id)
+        total_wages = sum(user['wage'] for user in expense['users'])
         return (my_wage / total_wages) * total
     else: raise Exception(f'Invalid expense split method: {expense["split"]}')
 
-def transform_expense(expense: Dict[str, Any], user_id: str, users: Dict[str, UserInfo]) -> Dict[str, Any]:
+def transform_expense(expense: Dict[str, Any], user_id: str) -> Dict[str, Any]:
     """
     Transforms an encoded expense model before it is returned to the client.
     @expense: The encoded expense object. **Will** be modified.
     """
     # Add total and contribution fields
     expense['total'] = resolve_expense_total(expense)
-    expense['contribution'] = resolve_expense_contribution(expense, expense['total'], user_id, users)
+    expense['contribution'] = resolve_expense_contribution(expense, expense['total'], user_id)
 
     # Remap 'expenseType' to 'type', and remove 'type'
     expense['type'] = expense.pop('expenseType')
+
+    # Rename expense id to remove 'Expense#' prefix and remove sk
+    expense['id'] = expense['id'].split('#')[1]
+    del expense['sk']
 
     return expense
 
 def parse_bool(value: Union[str, bool]) -> bool:
     if isinstance(value, bool): return value
     return strtobool(value)
+
+@app.route(BASE_ROUTE, methods=['POST'])
+def create_expense():
+    data = request.get_json()
+    if not ClientExpenseValidator.validate(data):
+        raise BadRequest(ClientExpenseValidator.errors)
+    data = ClientExpenseValidator.document
+
+    user_info = get_user_details()
+    user_id = user_info['cognito:username']
+
+    # Validation succeeded, create ExpenseModel from client input
+    expense = models.ExpenseModel.new()
+    expense.name = data['name']
+    expense.owner = user_id
+    expense.date = data['date']
+    expense.split = data['split']
+    expense.expenseType = data['type']
+    
+    # Seperate fields are defined for either single or multiple item expenses
+    if expense.expenseType == 'single':
+        expense.amount = data['amount']
+    else:
+        expense.items = [models.Item.new(
+            name=item['name'],
+            quantity=item['quantity'],
+            price=item['price'])
+            for item in data['items']]
+        expense.tax = models.PercentageAmount(**data['tax'])
+        expense.tip = models.PercentageAmount(**data['tip'])
+
+    # Get all users who are a part of this transaction to add into DynamoDB
+    # Currently, this means everyone (except for individual expenses, in which case it is only the owning user)
+    if expense.split == 'individually':
+        user_ids = [user_id]
+        expense.users = [models.UserStatus(user=user_id, paid=True, wage=user_info['custom:hourlyWage'])]
+    else:
+        # See docs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.list_users
+        cognito_users = cognito.list_users(UserPoolId=USER_POOL_ID)
+        user_ids = (user['Username'] for user in cognito_users['Users'])
+        expense.users = [models.UserStatus(
+            user=user['Username'],
+            paid=user['Username'] == user_id,
+            wage=float(next(attr['Value'] for attr in user['Attributes'] if attr['Name'] == 'custom:hourlyWage'))
+        ) for user in cognito_users['Users']]
+
+    users = [models.ExpenseUserModel.new(expense, id, id == user_id) for id in user_ids]
+
+    # When we write an expense to the database, we must write associated users as entries to the table as well
+    # We will use a transaction to do this to ensure that all writes occur atomically
+    with TransactWrite(connection=connection) as transaction:
+        transaction.save(expense)
+        for user in users:
+            transaction.save(user)
+
+    return jsonify(transform_expense(Encoder.encode(expense), user_id))
 
 @app.route(BASE_ROUTE, methods=['GET'])
 def get_expenses():
@@ -195,7 +206,8 @@ def get_expenses():
     user_info = get_user_details()
     user_id = user_info['cognito:username']
 
-    partition = f'{"Owner" if own else "Payer"}#{user_id}{"#Past" if past else ""}'
+    group = "Past" if past else ("Owner" if own else "Payer")
+    partition = f'{group}#{user_id}'
     query = models.ExpenseUserModel.tag_date_index.query(partition)
     batch = models.ExpenseModel.batch_get((item.id, item.id) for item in query)
     expenses = [Encoder.encode(item) for item in batch]
@@ -209,9 +221,20 @@ def get_expenses():
     users = resolve_user_infos(user_ids)
 
     # Transform each expense in place, adding info like contribution and total cost
-    for i in range(len(expenses)): transform_expense(expenses[i], user_id, users)
+    for i in range(len(expenses)): transform_expense(expenses[i], user_id)
 
     return jsonify(expenses=expenses, users=users)
+
+@app.route(f'{BASE_ROUTE}/<expense_id>', methods=['GET'])
+def get_expense(expense_id):
+    try:
+        pk = f'Expense#{expense_id}'
+        model = models.ExpenseModel.get(pk, pk)
+        encoded = Encoder.encode(model)
+        return jsonify(transform_expense(encoded))
+    except DoesNotExist:
+        raise NotFound()
+
     
 def handler(event, context):
     return awsgi.response(app, event, context)

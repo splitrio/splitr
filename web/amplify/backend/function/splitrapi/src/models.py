@@ -54,6 +54,7 @@ class UserStatus(MapAttribute):
     """
     user = UnicodeAttribute()
     paid = BooleanAttribute()
+    wage = NumberAttribute()
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """
@@ -100,7 +101,14 @@ class ExpenseUserModel(BaseModel, discriminator='ExpenseUser'):
 
     PK:     Expense#<EXPENSE_ID>
     SK:     User#<USER_ID>
-    tag:    {Owner|Payer}#<USER_ID>{#Past}
+    tag:    {Owner|Payer|Past}#<USER_ID>
+
+    Active expenses will have a tag prefixed with "Owner" or "Payer" if the user in question
+    created or owes money towards the expense, respectively.
+
+    Expenses that have been completed (i.e. all users have paid) will have the tag prefix "Past".
+    This allows easy paging through all passed expenses.
+    To determine if a user created a past expense, one can look at the corresponding ExpenseModel's 'owner' field. 
     """
     tag = UnicodeAttribute()
     date = UnicodeAttribute()

@@ -110,24 +110,33 @@ function DueExpenseGroup({ name, expenses }) {
 
 function BasicExpenseGroup({ expenses }) {
     return (
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {expenses.map(expense => (
-                    <tr key={expense.id}>
-                        <td>{expense.name}</td>
-                        <td>{expense.date}</td>
-                        <td>{formatCurrency(expense.total)}</td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <>
+            {expenses.length === 0 && (
+                <div className='empty-container'>
+                    <small>Nothing to see here &#128064;</small>
+                </div>
+            )}
+            {expenses.length > 0 && (
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {expenses.map(expense => (
+                            <tr key={expense.id}>
+                                <td>{expense.name}</td>
+                                <td>{expense.date}</td>
+                                <td>{formatCurrency(expense.total)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </>
     );
 }
 
@@ -172,7 +181,9 @@ export default function Dashboard() {
         ]);
 
         setPastExpenses({
-            expenses: [...pastMine.expenses, ...pastDue.expenses].sort((a, b) => b.date.localeCompare(a.date.localeCompare)),
+            expenses: [...pastMine.expenses, ...pastDue.expenses].sort((a, b) =>
+                b.date.localeCompare(a.date.localeCompare)
+            ),
             users: { ...pastMine.users, ...pastDue.users },
         });
     };
@@ -199,11 +210,18 @@ export default function Dashboard() {
                 </TabList>
                 <TabPanel>
                     <Loading loaded={dueExpenses} onMount={fetchDue}>
-                        {() =>
-                            Object.keys(dueExpenses.expenses).map(userID => (
-                                <DueExpenseGroup key={userID} expenses={dueExpenses.expenses[userID]} />
-                            ))
-                        }
+                        {() => (
+                            <>
+                                {Object.keys(dueExpenses.expenses).length === 0 && (
+                                    <div className='empty-container' align='center'>
+                                        <small>It look's like you're all paid up &#x1F389;</small>
+                                    </div>
+                                )}
+                                {Object.keys(dueExpenses.expenses).map(userID => (
+                                    <DueExpenseGroup key={userID} expenses={dueExpenses.expenses[userID]} />
+                                ))}
+                            </>
+                        )}
                     </Loading>
                 </TabPanel>
                 <TabPanel>

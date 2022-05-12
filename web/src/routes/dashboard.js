@@ -193,9 +193,9 @@ export default function Dashboard() {
             </div>
             <Tabs>
                 <TabList>
-                    <Tab>Payments Due</Tab>
-                    <Tab>My Expenses</Tab>
-                    <Tab>Past Expenses</Tab>
+                    <Tab>Due</Tab>
+                    <Tab>Active</Tab>
+                    <Tab>Past</Tab>
                 </TabList>
                 <TabPanel>
                     <Loading loaded={dueExpenses} onMount={fetchDue}>

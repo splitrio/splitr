@@ -1,4 +1,5 @@
 from distutils.util import strtobool
+from pydoc import resolve
 from typing import Any, Dict, Iterable, Tuple, TypedDict, Union
 
 import json
@@ -90,7 +91,7 @@ def resolve_expense_total(expense: Dict[str, Any]) -> float:
         return expense['amount']
     elif expense['expenseType'] == 'multiple':
         def resolve_percentage_amount(current_value: float, percentage_amount) -> float:
-            if percentage_amount['value'] is None: return current_value
+            if 'value' not in percentage_amount or percentage_amount['value'] is None: return current_value
             if percentage_amount['type'] == 'percentage':
                 return current_value * (1 + percentage_amount['value'] / 100)
             elif percentage_amount['type'] == 'amount':
@@ -120,14 +121,20 @@ def resolve_expense_contribution(expense: Dict[str, Any], total: float, user_id:
         return (my_wage / total_wages) * total
     else: raise Exception(f'Invalid expense split method: {expense["split"]}')
 
-def transform_expense(expense: Dict[str, Any], user_id: str) -> Dict[str, Any]:
+class TransformExpenseArgs(TypedDict):
+    total: float
+    """The total amount of this expense (if precomputed)"""
+    contribution: float
+    """This user's contribution towards this expense (if precomputed)"""
+
+def transform_expense(expense: Dict[str, Any], user_id: str, **kwargs: TransformExpenseArgs) -> Dict[str, Any]:
     """
     Transforms an encoded expense model before it is returned to the client.
     @expense: The encoded expense object. **Will** be modified.
     """
     # Add total and contribution fields
-    expense['total'] = resolve_expense_total(expense)
-    expense['contribution'] = resolve_expense_contribution(expense, expense['total'], user_id)
+    expense['total'] = kwargs.get('total', resolve_expense_total(expense))
+    expense['contribution'] = kwargs.get('contribution', resolve_expense_contribution(expense, expense['total'], user_id))
 
     # Remap 'expenseType' to 'type', and remove 'type'
     expense['type'] = expense.pop('expenseType')
@@ -176,7 +183,7 @@ def create_expense():
     # Currently, this means everyone (except for individual expenses, in which case it is only the owning user)
     if expense.split == 'individually':
         user_ids = [user_id]
-        expense.users = [models.UserStatus(user=user_id, paid=True, wage=user_info['custom:hourlyWage'])]
+        expense.users = [models.UserStatus(user=user_id, paid=True, wage=float(user_info['custom:hourlyWage']))]
     else:
         # See docs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.list_users
         cognito_users = cognito.list_users(UserPoolId=USER_POOL_ID)
@@ -184,7 +191,7 @@ def create_expense():
         expense.users = [models.UserStatus(
             user=user['Username'],
             paid=user['Username'] == user_id,
-            wage=float(next(attr['Value'] for attr in user['Attributes'] if attr['Name'] == 'custom:hourlyWage'))
+            wage=next(float(attr['Value']) for attr in user['Attributes'] if attr['Name'] == 'custom:hourlyWage')
         ) for user in cognito_users['Users']]
 
     users = [models.ExpenseUserModel.new(expense, id, id == user_id) for id in user_ids]
@@ -230,8 +237,32 @@ def get_expense(expense_id):
     try:
         pk = f'Expense#{expense_id}'
         model = models.ExpenseModel.get(pk, pk)
+        
+        # Users can only see expenses they are a part of
+        user_info = get_user_details()
+        user_id = user_info['cognito:username']
+        if user_id not in (user.user for user in model.users):
+            raise NotFound()
+
         encoded = Encoder.encode(model)
-        return jsonify(transform_expense(encoded))
+
+        # Populate result's user field with information about all associated users
+        total = resolve_expense_total(encoded)
+        contribution = resolve_expense_contribution(encoded, total, user_id)    # This user's contribution
+        user_infos = resolve_user_infos(user['user'] for user in encoded['users'])
+        for user in encoded['users']:
+            # Populate fields such as first name, last name, wage, etc.
+            user.update(user_infos[user['user']])
+
+            # Add contribution. This check prevents computing this user's contribution twice
+            if user['user'] == user_id:
+                user['contribution'] = contribution
+            else: user['contribution'] = resolve_expense_contribution(encoded, total, user['user'])
+
+            # Add proportional contribution
+            user['proportion'] = user['contribution'] / total
+
+        return jsonify(transform_expense(encoded, user_id, total=total, contribution=contribution))
     except DoesNotExist:
         raise NotFound()
 

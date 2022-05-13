@@ -1,7 +1,9 @@
 import { Routes, Route, useLocation, Navigate, Outlet } from 'react-router-dom';
 import Login from './routes/login';
 import Dashboard from './routes/dashboard';
-import Expense from './routes/expense/expense';
+import EditExpense from './routes/expense/edit/edit';
+import ViewExpense from './routes/expense/view/view';
+import NotFound from './routes/notfound';
 
 import './App.scss';
 import { Toaster } from 'react-hot-toast';
@@ -26,9 +28,10 @@ export default function App() {
                 <Route path="/login" element={<Login />} />
                 <Route element={<RequireAuth loginPath='/login' />}>
                     <Route path="/" element={<Dashboard />} />
-                    <Route path="/expense" element={<Expense />} />
+                    <Route path="/expense/:expenseId" element={<ViewExpense />} />
+                    <Route path="/expense" element={<EditExpense />} />
                 </Route>
-                <Route path='*' element={<Navigate to='/' />} />
+                <Route path={'*'} element={<NotFound />} />
             </Routes>
             <Toaster position='bottom-center' />
         </AuthProvider>

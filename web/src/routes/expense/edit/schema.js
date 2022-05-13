@@ -1,5 +1,5 @@
 import { string, object, date, array } from "yup";
-import { NullableNumber } from "../../util/schema";
+import { NullableNumber } from "../../../util/schema";
 import moment from "moment";
     
 const NameSchema = string()

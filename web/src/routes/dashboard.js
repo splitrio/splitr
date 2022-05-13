@@ -36,7 +36,7 @@ function Loading({ loaded, onMount, children }) {
     return children;
 }
 
-function DueExpenseGroup({ name, expenses }) {
+function DueExpenseGroup({ name, expenses, openExpense }) {
     const [selected, setSelected] = useState(new Set());
     const changeAll = useRef();
 
@@ -89,12 +89,13 @@ function DueExpenseGroup({ name, expenses }) {
                 </thead>
                 <tbody>
                     {expenses.map(expense => (
-                        <tr key={expense.id}>
+                        <tr key={expense.id} className='click' onClick={() => openExpense(expense.id)}>
                             <td style={col(30)}>
                                 <input
                                     type='checkbox'
                                     onChange={onChange(expense.id)}
                                     checked={selected.has(expense.id)}
+                                    onClick={e => e.stopPropagation()}
                                 />
                             </td>
                             <td>{expense.name}</td>
@@ -108,7 +109,7 @@ function DueExpenseGroup({ name, expenses }) {
     );
 }
 
-function BasicExpenseGroup({ expenses }) {
+function BasicExpenseGroup({ expenses, openExpense }) {
     return (
         <>
             {expenses.length === 0 && (
@@ -127,7 +128,7 @@ function BasicExpenseGroup({ expenses }) {
                     </thead>
                     <tbody>
                         {expenses.map(expense => (
-                            <tr key={expense.id}>
+                            <tr key={expense.id} className='click' onClick={() => openExpense(expense.id)}>
                                 <td>{expense.name}</td>
                                 <td>{expense.date}</td>
                                 <td>{formatCurrency(expense.total)}</td>
@@ -188,6 +189,8 @@ export default function Dashboard() {
         });
     };
 
+    const openExpense = id => navigate(`/expense/${id}`);
+
     return (
         <Page>
             <hgroup>
@@ -218,7 +221,12 @@ export default function Dashboard() {
                                     </div>
                                 )}
                                 {Object.keys(dueExpenses.expenses).map(userID => (
-                                    <DueExpenseGroup key={userID} expenses={dueExpenses.expenses[userID]} />
+                                    <DueExpenseGroup
+                                        key={userID}
+                                        expenses={dueExpenses.expenses[userID]}
+                                        name={dueExpenses.users[userID].firstName}
+                                        openExpense={openExpense}
+                                    />
                                 ))}
                             </>
                         )}
@@ -226,13 +234,13 @@ export default function Dashboard() {
                 </TabPanel>
                 <TabPanel>
                     <Loading loaded={myExpenses} onMount={fetchMine}>
-                        {() => <BasicExpenseGroup expenses={myExpenses.expenses} />}
+                        {() => <BasicExpenseGroup expenses={myExpenses.expenses} openExpense={openExpense} />}
                     </Loading>
                 </TabPanel>
                 <TabPanel>
                     <Loading>
                         <Loading loaded={pastExpenses} onMount={fetchPast}>
-                            {() => <BasicExpenseGroup expenses={pastExpenses.expenses} />}
+                            {() => <BasicExpenseGroup expenses={pastExpenses.expenses} openExpense={openExpense} />}
                         </Loading>
                     </Loading>
                 </TabPanel>

@@ -58,6 +58,16 @@ dialog>article {
     margin: 0 !important;
 }
 
+.no-space {
+    margin-bottom: 0 !important;
+}
+
+.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 /**
  * Icons and Interactives
  */

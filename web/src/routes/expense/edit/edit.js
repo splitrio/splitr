@@ -3,17 +3,17 @@ import { Formik, Form, FieldArray } from 'formik';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
-import Page from '../../components/Page';
-import Show from '../../components/Show';
+import Page from '../../../components/Page';
+import Show from '../../../components/Show';
 import ItemModal from './ItemModal';
-import CloseHeader from '../../components/CloseHeader';
+import CloseHeader from '../../../components/CloseHeader';
 import { DefaultExpense, ExpenseSchema } from './schema';
-import LabelInput from '../../components/form/LabelInput';
-import PercentageAmountSelector from '../../components/form/PercentageAmountSelector';
+import LabelInput from '../../../components/form/LabelInput';
+import PercentageAmountSelector from '../../../components/form/PercentageAmountSelector';
 
-import './expense.scss';
-import { API } from 'aws-amplify';
-import useAuth from '../../hooks/useAuth';
+import './edit.scss';
+import useAuth from '../../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -60,7 +60,7 @@ function submitText(values) {
     return `Add Expense${total ? ' • $' + total.toFixed(2) : ''}`;
 }
 
-export default function Expense() {
+export default function EditExpense() {
     function getSplitTooltip(split) {
         switch (split) {
             case 'proportionally': return 'Expense will be split up by salary';
@@ -86,6 +86,7 @@ export default function Expense() {
     }
 
     const auth = useAuth();
+    const navigate = useNavigate();
     const [editing, setEditing] = useState(-1);
 
     return (
@@ -101,18 +102,11 @@ export default function Expense() {
                 validationSchema={ExpenseSchema}
                 onSubmit={async (values, { setSubmitting }) => {
                     try {
-                        const user = auth.user();
-                        const token = user.signInUserSession.idToken.jwtToken;
-                        const result = await API.post('splitr', '/expenses', {
-                            headers: {
-                                Authorization: token
-                            },
-                            body: ExpenseSchema.cast(values)
-                        });
-                        alert(JSON.stringify(result, null, 2));
+                        await auth.api.post('/expenses', {body: ExpenseSchema.cast(values)});
                         setSubmitting(false);
+                        navigate(-1);
                     } catch (e) {
-                        console.log(e);
+                        toast.error("Failed to submit expense. Try again later.");
                     }
                 }}
             >

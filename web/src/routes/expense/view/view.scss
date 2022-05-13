@@ -1,0 +1,27 @@
+.icons {
+    flex-direction: row;
+    align-items: center;
+    display: flex;
+
+    > svg {
+        margin-right: 8px;
+    }
+}
+
+table.items {
+    :is(thead, tbody, tfoot) {
+        tr {
+            td:first-child {
+                padding-left: 0;
+            }
+
+            td:last-child {
+                text-align: right;
+            }
+        }
+    }
+
+    tfoot {
+        --font-size: 0.875em;
+    }
+}

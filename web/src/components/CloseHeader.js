@@ -17,7 +17,7 @@ export default function CloseHeader(props) {
 
     return (
         <nav>
-            {props.children}
+            {props.children || <p />}
             <FiX style={buttonStyles} onClick={onClick} />
         </nav>
     );

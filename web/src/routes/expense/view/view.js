@@ -1,7 +1,7 @@
 import Page from '../../../components/Page';
 import './view.scss';
 
-import SpendingDoughnut from '../../../components/SpendingDoughnut';
+import SpendingDoughnut from './SpendingDoughnut';
 import { useEffect, useState } from 'react';
 import useAuth from '../../../hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -120,6 +120,7 @@ export default function ViewExpense() {
 
     const ownerName = () => {
         const owner = expense.users.find(u => u.user === expense.owner);
+        if (owner.user === auth.user().getUsername()) return 'You';
         return `${owner.firstName} ${owner.lastName}`;
     };
 

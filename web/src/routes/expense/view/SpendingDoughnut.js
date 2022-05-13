@@ -1,9 +1,16 @@
 import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { useEffect, useRef } from 'react';
-import useTheme from '../hooks/useTheme';
-import { formatCurrency } from '../util/util';
+import useAuth from '../../../hooks/useAuth';
+import useTheme from '../../../hooks/useTheme';
+import { formatCurrency } from '../../../util/util';
 
 import './SpendingDoughnut.scss';
+
+function newRadius(x, y, offsetX, offsetY, angle, radius) {
+    const rimX = x + Math.cos(angle) * radius;
+    const rimY = y + Math.sin(angle) * radius;
+    return Math.sqrt((rimX - offsetX) ** 2 + (rimY - offsetY) ** 2);
+}
 
 class SpendingDoughnutController extends DoughnutController {
     draw() {
@@ -94,11 +101,30 @@ class SpendingDoughnutController extends DoughnutController {
             ctx.fillText(line, centerX, centerY);
         }
     }
+
+    updateElement(element, index, properties, mode) {
+        const ownerIndex = this.chart.options.userSlice.index;
+        if (index !== ownerIndex) return super.updateElement(element, index, properties, mode);
+        const gap = this.chart.options.userSlice.gap;
+        const { x, y, startAngle, endAngle, innerRadius, outerRadius } = properties;
+        const angle = 0.5 * (startAngle + endAngle);
+        const newX = x + gap * Math.cos(angle);
+        const newY = y + gap * Math.sin(angle);
+        properties.x = newX;
+        properties.y = newY;
+        properties.innerRadius = newRadius(x, y, newX, newY, startAngle, innerRadius);
+        properties.outerRadius = newRadius(x, y, newX, newY, startAngle, outerRadius);
+        super.updateElement(element, index, properties, mode);
+    }
 }
 
 SpendingDoughnutController.id = 'spacedDoughnut';
 SpendingDoughnutController.defaults = {
     ...DoughnutController.defaults,
+    userSlice: {
+        index: -1,
+        gap: 0,
+    },
 };
 Chart.register([ArcElement, Tooltip, SpendingDoughnutController]);
 
@@ -134,6 +160,8 @@ function SpendingDoughnutChart({ data, options = {} }) {
 }
 
 export default function SpendingDoughnut({ expense }) {
+    const auth = useAuth();
+
     const contrast = useTheme('h1-color');
     const fontFamily = useTheme('font-family');
 
@@ -167,6 +195,14 @@ export default function SpendingDoughnut({ expense }) {
                         minFontSize: false, // Default is 20 (in px), set to false and text will not wrap.
                     },
                 },
+                userSlice: {
+                    index:
+                        // Don't put gap around user's slice if there's only one user
+                        expense.users.length === 1
+                            ? -1
+                            : expense.users.findIndex(user => user.user === auth.user().getUsername()),
+                    gap: 15,
+                },
                 plugins: {
                     tooltip: {
                         displayColors: false,
@@ -174,6 +210,7 @@ export default function SpendingDoughnut({ expense }) {
                             title: model => {
                                 const idx = model[0].dataIndex;
                                 const user = expense.users[idx];
+                                if (user.user === auth.user().getUsername()) return 'You';
                                 return `${user.firstName} ${user.lastName}`;
                             },
                             label: model => {

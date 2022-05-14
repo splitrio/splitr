@@ -11,8 +11,22 @@ import toast from 'react-hot-toast';
 import CloseHeader from '../../../components/CloseHeader';
 import { formatCurrency } from '../../../util/util';
 
-import { FaCalendar, FaCreditCard, FaThList, FaCommentsDollar } from 'react-icons/fa';
+import {
+    FaCalendar,
+    FaCreditCard,
+    FaThList,
+    FaCommentsDollar,
+    FaChevronDown,
+    FaPen,
+    FaTrash,
+    FaCheck,
+    FaTimes,
+    FaLock,
+} from 'react-icons/fa';
+import { BsFillPatchCheckFill } from 'react-icons/bs';
+import { Action, Fab } from 'react-tiny-fab';
 import moment from 'moment';
+import Modal from '../../../components/Modal';
 
 function resolveItemsTooltips(expense) {
     const items = expense.items;
@@ -51,7 +65,7 @@ function resolveItemsTooltips(expense) {
     };
 }
 
-function ItemsDisplay({ expense }) {
+function ItemsDetail({ expense }) {
     const tooltips = resolveItemsTooltips(expense);
     return (
         <table className='items'>
@@ -82,16 +96,235 @@ function ItemsDisplay({ expense }) {
                     </td>
                     <td>{tooltips.subtotalTooltip}</td>
                 </tr>
-                {tooltips.taxTooltip && <tr>
-                    <td><strong>Tax</strong></td>
-                    <td>{tooltips.taxTooltip}</td>
-                </tr>}
-                {tooltips.tipTooltip && <tr>
-                    <td><strong>Tip</strong></td>
-                    <td>{tooltips.tipTooltip}</td>
-                </tr>}
+                {tooltips.taxTooltip && (
+                    <tr>
+                        <td>
+                            <strong>Tax</strong>
+                        </td>
+                        <td>{tooltips.taxTooltip}</td>
+                    </tr>
+                )}
+                {tooltips.tipTooltip && (
+                    <tr>
+                        <td>
+                            <strong>Tip</strong>
+                        </td>
+                        <td>{tooltips.tipTooltip}</td>
+                    </tr>
+                )}
             </tfoot>
         </table>
+    );
+}
+
+const Relation = Object.freeze({
+    Unconfirmed: 1, // Not owner, hasn't confirmed payment
+    Confirmed: 2, // Not owner, has confirmed payment
+    Owner: 3, // Owner, allow modifications (edit/delete)
+    OwnerLocked: 4, // Owner, don't allow modifications
+});
+
+function getRelation(expense, userID) {
+    if (expense.owner === userID) {
+        if (expense.users.some(u => u.paid && u.user !== userID)) return Relation.OwnerLocked;
+        return Relation.Owner;
+    }
+
+    if (expense.users.find(u => u.user === userID).paid) return Relation.Confirmed;
+    return Relation.Unconfirmed;
+}
+
+const ViewState = Object.freeze({
+    Viewing: 1,
+    ConfirmDelete: 2,
+    ConfirmPayment: 3,
+    RescindPayment: 4,
+});
+
+function ConfirmDeleteModal({ expense, viewState, onClose }) {
+    return (
+        <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmDelete} onClose={onClose}>
+            <CloseHeader onClick={onClose}>
+                <hgroup>
+                    <h3>Delete Expense?</h3>
+                    <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
+                </hgroup>
+            </CloseHeader>
+            <button className='danger outline'>Yes, I'm Sure</button>
+        </Modal>
+    );
+}
+
+function ConfirmPaymentModal({ expense, viewState, onClose }) {
+    const containerStyles = {
+        height: '200px',
+        display: 'flex',
+        alignItems: 'center',
+    };
+    const currencyStyles = {
+        fontSize: '3em',
+        margin: '0 auto',
+    };
+    const owner = expense.users.find(u => u.user === expense.owner);
+    return (
+        <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmPayment} onClose={onClose}>
+            <CloseHeader onClick={onClose}>
+                <hgroup className='no-space'>
+                    <h3>Confirm Payment?</h3>
+                    <p>
+                        This confirms that you've paid{' '}
+                        <strong>
+                            {owner.firstName} {owner.lastName}
+                        </strong>{' '}
+                        this amount.
+                    </p>
+                </hgroup>
+            </CloseHeader>
+            <div style={containerStyles}>
+                <h1 style={currencyStyles}>{formatCurrency(expense.contribution)}</h1>
+            </div>
+            <button className='contrast outline'>Yes, I Paid This Amount</button>
+        </Modal>
+    );
+}
+
+function RescindPaymentModal({ expense, viewState, onClose }) {
+    return (
+        <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.RescindPayment} onClose={onClose}>
+            <CloseHeader onClick={onClose}>
+                <hgroup>
+                    <h3>Rescind Payment?</h3>
+                    <p>
+                        Make sure to confirm again once you've paid{' '}
+                        <strong>{expense.users.find(u => u.user === expense.owner).firstName}</strong> back 💰
+                    </p>
+                </hgroup>
+            </CloseHeader>
+            <button className='contrast outline'>Yes, Rescind Payment</button>
+        </Modal>
+    );
+}
+
+function ExpenseFAB({ expense, relation }) {
+    const [state, setState] = useState(ViewState.Viewing);
+    const closeModal = () => setState(ViewState.Viewing);
+    return (
+        <>
+            {relation !== Relation.OwnerLocked && (
+                <Fab style={{ bottom: '10px', right: '10px' }} icon={<FaChevronDown />} event={'hover'}>
+                    {relation === Relation.Owner && (
+                        <Action text='Edit Expense'>
+                            <FaPen />
+                        </Action>
+                    )}
+
+                    {relation === Relation.Owner && (
+                        <Action text='Delete Expense' onClick={() => setState(ViewState.ConfirmDelete)}>
+                            <FaTrash />
+                        </Action>
+                    )}
+
+                    {relation === Relation.Unconfirmed && (
+                        <Action text='Confirm Payment' onClick={() => setState(ViewState.ConfirmPayment)}>
+                            <FaCheck />
+                        </Action>
+                    )}
+
+                    {relation === Relation.Confirmed && (
+                        <Action text='Rescind Payment' onClick={() => setState(ViewState.RescindPayment)}>
+                            <FaTimes />
+                        </Action>
+                    )}
+                </Fab>
+            )}
+            <ConfirmDeleteModal expense={expense} onClose={closeModal} viewState={state} />
+            <ConfirmPaymentModal expense={expense} onClose={closeModal} viewState={state} />
+            <RescindPaymentModal expense={expense} onClose={closeModal} viewState={state} />
+        </>
+    );
+}
+
+function ExpenseDetail({ expense }) {
+    const auth = useAuth();
+    const ownerName = () => {
+        const owner = expense.users.find(u => u.user === expense.owner);
+        if (owner.user === auth.user().getUsername()) return 'You';
+        return `${owner.firstName} ${owner.lastName}`;
+    };
+
+    const formattedDate = () => moment(expense.date, 'YYYY-MM-DD').format('MMM Do, YYYY');
+    const relation = getRelation(expense, auth.user().getUsername());
+
+    const paidUserFirstNames = () => {
+        const paidUsers = expense.users.filter(u => u.paid && u.user !== expense.owner);
+        function firstNames() {
+            if (paidUsers.length === 0) return '';
+            if (paidUsers.length === 1) return paidUsers[0].firstName;
+            if (paidUsers.length === 2) return `${paidUsers[0].firstName} and ${paidUsers[1].firstName}`;
+            return paidUsers.reduce((names, user, index) => {
+                if (index === paidUsers.length - 1) return names + ` and ${user.firstName}`;
+                return names + `${user.firstName}, `;
+            }, '');
+        };
+        return [firstNames(), paidUsers.length > 1];
+    };
+
+    const [paidUserNames, paidUserPlural] = paidUserFirstNames();
+
+    return (
+        <>
+            {/* <p data-tip='hello world'>Tooltip Text</p> */}
+            <ExpenseFAB expense={expense} relation={relation} />
+            <SpendingDoughnut expense={expense} />
+            <hgroup className='centered'>
+                <h1>{expense.name}</h1>
+                <h6>{ownerName()}</h6>
+            </hgroup>
+            <hr />
+            <br />
+            {relation === Relation.OwnerLocked && (
+                <hgroup>
+                    <h6 className='icons'>
+                        <FaLock /> Locked
+                    </h6>
+                    <p>
+                        Since <strong>{paidUserNames}</strong> {paidUserPlural ? 'have' : 'has'} confirmed payment for this expense, it can't be
+                        modified or deleted.
+                    </p>
+                </hgroup>
+            )}
+            {relation === Relation.Confirmed && (
+                <hgroup>
+                    <h6 className='icons'>
+                        <BsFillPatchCheckFill /> Confirmed
+                    </h6>
+                    <p>You confirmed payment for this expense.</p>
+                </hgroup>
+            )}
+            <hgroup>
+                <h6 className='icons'>
+                    <FaCalendar /> Date
+                </h6>
+                <p>{formattedDate()}</p>
+            </hgroup>
+            <hgroup>
+                <h6 className='icons'>
+                    <FaCreditCard /> Split
+                </h6>
+                <p style={{ textTransform: 'capitalize' }}>{expense.split}</p>
+            </hgroup>
+            <hgroup>
+                <h6 className='icons'>
+                    <FaCommentsDollar /> Contribution
+                </h6>
+                <p>
+                    {expense.users.find(u => u.user === auth.user().getUsername()).paid ? 'You paid' : "You'll pay"}{' '}
+                    {formatCurrency(expense.contribution)}
+                </p>
+            </hgroup>
+
+            {expense.type === 'multiple' && <ItemsDetail expense={expense} />}
+        </>
     );
 }
 
@@ -102,6 +335,7 @@ export default function ViewExpense() {
     const [expense, setExpense] = useState(null);
 
     useEffect(() => {
+        if (expense !== null) return;
         async function getExpense() {
             try {
                 const expense = await auth.api.get(`/expenses/${expenseId}`);
@@ -111,58 +345,18 @@ export default function ViewExpense() {
                     navigate('/404', { replace: true });
                 } else {
                     toast.error(`Couldn't get expense: ${e.message}`);
-                    navigate(-1);
+                    navigate(-1, { replace: true });
                 }
             }
         }
         getExpense();
-    }, [expenseId, auth.api, navigate]);
-
-    const ownerName = () => {
-        const owner = expense.users.find(u => u.user === expense.owner);
-        if (owner.user === auth.user().getUsername()) return 'You';
-        return `${owner.firstName} ${owner.lastName}`;
-    };
-
-    const formattedDate = () => moment(expense.date, 'YYYY-MM-DD').format("MMM Do, YYYY"); 
+    }, [expense, expenseId, auth.api, navigate]);
 
     return (
         <Page>
             <CloseHeader />
             {expense === null && <LoadingBlock style={{ height: '200px' }} />}
-            <Show when={expense !== null}>
-                {expense !== null && (
-                    <>
-                        <SpendingDoughnut expense={expense} />
-                        <hgroup className='centered'>
-                            <h1>{expense.name}</h1>
-                            <h6>{ownerName()}</h6>
-                        </hgroup>
-                        <hr />
-                        <br />
-                        <hgroup>
-                            <h6 className='icons'>
-                                <FaCalendar /> Date
-                            </h6>
-                            <p>{formattedDate()}</p>
-                        </hgroup>
-                        <hgroup>
-                            <h6 className='icons'>
-                                <FaCreditCard /> Split
-                            </h6>
-                            <p style={{textTransform: 'capitalize'}}>{expense.split}</p>
-                        </hgroup>
-                        <hgroup>
-                            <h6 className='icons'>
-                                <FaCommentsDollar /> Contribution
-                            </h6>
-                            <p>You'll pay {formatCurrency(expense.contribution)}</p>
-                        </hgroup>
-                        
-                        {expense.type === 'multiple' && <ItemsDisplay expense={expense} />}
-                    </>
-                )}
-            </Show>
+            <Show when={expense !== null}>{expense !== null && <ExpenseDetail expense={expense} />}</Show>
         </Page>
     );
 }

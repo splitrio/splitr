@@ -87,11 +87,76 @@ dialog>article {
     --text-decoration: underline;
 }
 
+:is(button, input[type="submit"], input[type="button"], [role="button"]).danger {
+	--background-color: var(--del-color);
+	--border-color: var(--del-color);
+	--color: var(--primary-inverse);
+
+    &.outline {
+        --color: var(--del-color);
+        --background-color: transparent;
+        
+        &:is([aria-current], :hover, :active, :focus) {
+            --background-color: var(--del-color);
+            --color: var(--primary-inverse);
+        }
+    }
+}
+
+/**
+ * react-tiny-fab fixes to interop with Pico.css
+*/
+
+ul.rtf {
+
+    // Render FAB below modals
+    z-index: 900;
+    .rtf--mb {
+        z-index: 901;
+    }
+
+    li {
+        list-style: none;
+
+        button {
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            outline: none;
+            background-color: var(--contrast);
+            color: var(--contrast-inverse);
+            box-shadow: 0 0 4px rgba(0, 0, 0, .14), 0 4px 8px rgba(0, 0, 0, .28);
+            font-weight: 700;
+            font-size: 0.8em;
+            margin-bottom: 0;
+            display: flex;
+            align-content: center;
+        }
+    }
+
+    // Disable default rotation animation on main button
+    // (let consumers decide whether main button should rotate on open)
+    &.open .rtf--mb>* {
+        transform: none;
+    }
+}
+
+.ReactModal__Overlay {
+    z-index: 1000;
+}
+
+/**
+ * Allow SVGs to overflow
+ */
+svg:not(:root) {
+    overflow: visible;
+}
+
 /**
  * Modal Animations
  */
 
- .ReactModal__Overlay {
+.ReactModal__Overlay {
     opacity: 0;
     transition: opacity 200ms ease-in-out;
 
@@ -101,7 +166,7 @@ dialog>article {
     }
 }
 
-.ReactModal__Overlay--after-open{
+.ReactModal__Overlay--after-open {
     opacity: 1;
 
     dialog>article {
@@ -109,7 +174,7 @@ dialog>article {
     }
 }
 
-.ReactModal__Overlay--before-close{
+.ReactModal__Overlay--before-close {
     opacity: 0;
 
     dialog>article {

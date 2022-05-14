@@ -12,24 +12,23 @@ import useAuth, { AuthProvider } from './hooks/useAuth';
 function RequireAuth({ loginPath }) {
     const auth = useAuth();
     const location = useLocation();
-    if (!auth.authenticated())
-        return <Navigate to={loginPath} replace state={{ from: location.pathname }} />;
+    if (!auth.authenticated()) return <Navigate to={loginPath} replace state={{ from: location.pathname }} />;
     else return <Outlet />;
 }
 
 export default function App() {
     // Set global document title
-    document.title = "splitr";
+    document.title = 'splitr';
     const location = useLocation();
 
     return (
         <AuthProvider>
             <Routes location={location} key={location.pathname}>
-                <Route path="/login" element={<Login />} />
+                <Route path='/login' element={<Login />} />
                 <Route element={<RequireAuth loginPath='/login' />}>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/expense/:expenseId" element={<ViewExpense />} />
-                    <Route path="/expense" element={<EditExpense />} />
+                    <Route path='/' element={<Dashboard />} />
+                    <Route path='/expense/:expenseId' element={<ViewExpense />} />
+                    <Route path='/expense' element={<EditExpense />} />
                 </Route>
                 <Route path={'*'} element={<NotFound />} />
             </Routes>

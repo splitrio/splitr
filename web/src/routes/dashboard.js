@@ -172,21 +172,10 @@ export default function Dashboard() {
     const [pastExpenses, setPastExpenses] = useState(null);
     const fetchPast = async () => {
         if (pastExpenses !== null) return;
-        const [pastMine, pastDue] = await Promise.all([
-            auth.api.get('/expenses', {
-                queryStringParameters: { own: true, past: true },
-            }),
-            auth.api.get('/expenses', {
-                queryStringParameters: { own: false, past: true },
-            }),
-        ]);
-
-        setPastExpenses({
-            expenses: [...pastMine.expenses, ...pastDue.expenses].sort((a, b) =>
-                b.date.localeCompare(a.date.localeCompare)
-            ),
-            users: { ...pastMine.users, ...pastDue.users },
+        const result = await auth.api.get('/expenses', {
+            queryStringParameters: { past: true }
         });
+        setPastExpenses(result);
     };
 
     const openExpense = id => navigate(`/expense/${id}`);

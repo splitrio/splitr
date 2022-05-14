@@ -194,7 +194,7 @@ def create_expense():
             wage=next(float(attr['Value']) for attr in user['Attributes'] if attr['Name'] == 'custom:hourlyWage')
         ) for user in cognito_users['Users']]
 
-    users = [models.ExpenseUserModel.new(expense, id, id == user_id) for id in user_ids]
+    users = [models.ExpenseUserModel.new(expense, id) for id in user_ids]
 
     # When we write an expense to the database, we must write associated users as entries to the table as well
     # We will use a transaction to do this to ensure that all writes occur atomically

@@ -26,3 +26,8 @@ table.items {
         --font-size: 0.875em;
     }
 }
+
+.rtf.open .rtf--mb > * {
+    transform: rotate(540deg) !important;
+    transition: transform 0.3s ease-in-out !important;
+}

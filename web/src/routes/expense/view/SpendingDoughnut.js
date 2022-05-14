@@ -103,9 +103,10 @@ class SpendingDoughnutController extends DoughnutController {
     }
 
     updateElement(element, index, properties, mode) {
-        const ownerIndex = this.chart.options.userSlice.index;
-        if (index !== ownerIndex) return super.updateElement(element, index, properties, mode);
-        const gap = this.chart.options.userSlice.gap;
+        // Don't render chart gap when only one element
+        if (this.chart.options.elementCount === 1)
+            return super.updateElement(element, index, properties, mode);
+        const gap = this.chart.options.gap;
         const { x, y, startAngle, endAngle, innerRadius, outerRadius } = properties;
         const angle = 0.5 * (startAngle + endAngle);
         const newX = x + gap * Math.cos(angle);
@@ -121,10 +122,8 @@ class SpendingDoughnutController extends DoughnutController {
 SpendingDoughnutController.id = 'spacedDoughnut';
 SpendingDoughnutController.defaults = {
     ...DoughnutController.defaults,
-    userSlice: {
-        index: -1,
-        gap: 0,
-    },
+    gap: 8,
+    elementCount: 0
 };
 Chart.register([ArcElement, Tooltip, SpendingDoughnutController]);
 
@@ -166,14 +165,14 @@ export default function SpendingDoughnut({ expense }) {
     const fontFamily = useTheme('font-family');
 
     const data = {
-        labels: ['Red', 'Blue', 'Yellow'],
+        labels: [],
         datasets: [
             {
                 data: expense.users.map(user => user.contribution),
                 backgroundColor: expense.users.map(user => (user.paid ? contrast : 'transparent')),
                 borderWidth: 1,
                 hoverOffset: 10,
-                borderColor: contrast,
+                borderColor: contrast
             },
         ],
     };
@@ -195,14 +194,7 @@ export default function SpendingDoughnut({ expense }) {
                         minFontSize: false, // Default is 20 (in px), set to false and text will not wrap.
                     },
                 },
-                userSlice: {
-                    index:
-                        // Don't put gap around user's slice if there's only one user
-                        expense.users.length === 1
-                            ? -1
-                            : expense.users.findIndex(user => user.user === auth.user().getUsername()),
-                    gap: 15,
-                },
+                elementCount: expense.users.length,
                 plugins: {
                     tooltip: {
                         displayColors: false,

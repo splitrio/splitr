@@ -115,16 +115,28 @@ class ExpenseUserModel(BaseModel, discriminator='ExpenseUser'):
     tag_date_index = TagDateIndex()
 
     @classmethod
-    def new(cls, expense: ExpenseModel, user_id: str, is_owner: bool):
+    def new(cls, expense: ExpenseModel, user_id: str):
         """
         Creates a new `ExpenseUserModel`.
         @expense: The associated `ExpenseModel`.
         @user_id: The id of the user associated with this object
-        @is_owner: Whether or not the user denoted by `user_id` is the owner of this expense, i.e. the one who created it.
         """
-        return cls(
-            expense.id,
-            f'User#{user_id}',
-            tag=f'{"Owner" if is_owner else "Payer"}#{user_id}',
-            date=expense.date
-        )
+        instance = cls()
+        instance.update_from_expense(expense, user_id)
+        return instance
+
+    def update_from_expense(self, expense: ExpenseModel, user_id: str):
+        self.id = expense.id
+        self.sk = f'User#{user_id}'
+
+        def is_expense_past():
+            # For expense owners, expenses are considered 'past' if everybody has paid
+            # For expense payers (not owner), expenses are considered 'past' if that user has paid for the expense
+            if user_id == expense.owner:
+                return all(user.paid for user in expense.users)
+            return next(user.paid for user in expense.users if user.user == user_id)
+
+        is_past = is_expense_past()
+        is_owner = expense.owner == user_id
+        self.tag = f'{"Past" if is_past else ("Owner" if is_owner else "Payer")}#{user_id}'
+        self.date = expense.date

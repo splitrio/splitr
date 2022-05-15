@@ -16,7 +16,6 @@ import {
     FaCreditCard,
     FaThList,
     FaCommentsDollar,
-    FaChevronDown,
     FaPen,
     FaTrash,
     FaCheck,
@@ -24,7 +23,8 @@ import {
     FaLock,
 } from 'react-icons/fa';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
-import { Action, Fab } from 'react-tiny-fab';
+import { Action } from 'react-tiny-fab';
+import Fab from '../../../components/Fab';
 import moment from 'moment';
 import Modal from '../../../components/Modal';
 
@@ -258,11 +258,7 @@ function ExpenseFAB({ expense, relation }) {
     return (
         <>
             {relation !== Relation.OwnerLocked && (
-                <Fab
-                    style={{ bottom: '10px', right: '10px' }}
-                    icon={<FaChevronDown />}
-                    event={'hover'}
-                    alwaysShowTitle={true}>
+                <Fab>
                     {relation === Relation.Owner && (
                         <Action text='Edit Expense'>
                             <FaPen />

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { FaReceipt, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
+import { Action } from 'react-tiny-fab';
+import Fab from '../components/Fab';
 import LoadingBlock from '../components/LoadingBlock';
 import Page from '../components/Page';
 import useAuth from '../hooks/useAuth';
@@ -173,7 +175,7 @@ export default function Dashboard() {
     const fetchPast = async () => {
         if (pastExpenses !== null) return;
         const result = await auth.api.get('/expenses', {
-            queryStringParameters: { past: true }
+            queryStringParameters: { past: true },
         });
         setPastExpenses(result);
     };
@@ -186,14 +188,6 @@ export default function Dashboard() {
                 <h1 className='title'>Welcome</h1>
                 <h2>Tap below to enter an expense</h2>
             </hgroup>
-            <div className='grid'>
-                <button className='contrast'>
-                    <FaReceipt /> Scan Receipt
-                </button>
-                <button className='contrast' onClick={() => navigate('/expense')}>
-                    <FaPlus /> Other Expense
-                </button>
-            </div>
             <Tabs>
                 <TabList>
                     <Tab>Due</Tab>
@@ -234,6 +228,14 @@ export default function Dashboard() {
                     </Loading>
                 </TabPanel>
             </Tabs>
+            <Fab>
+                <Action text={'Add Expense'} onClick={() => navigate('/expense')}>
+                    <FaPlus />
+                </Action>
+                <Action text={'Scan Receipt'}>
+                    <FaReceipt />
+                </Action>
+            </Fab>
         </Page>
     );
 }

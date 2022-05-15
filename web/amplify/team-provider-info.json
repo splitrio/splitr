@@ -16,11 +16,11 @@
       "function": {
         "preSignUp": {
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
-          "s3Key": "amplify-builds/preSignUp-5a64653176586c754574-build.zip"
+          "s3Key": "amplify-builds/preSignUp-62594338356d30445674-build.zip"
         },
         "splitrapi": {
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
-          "s3Key": "amplify-builds/splitrapi-626e334371594935324a-build.zip"
+          "s3Key": "amplify-builds/splitrapi-6b4d59477a776e547370-build.zip"
         }
       },
       "auth": {

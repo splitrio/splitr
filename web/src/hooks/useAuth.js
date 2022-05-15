@@ -66,7 +66,7 @@ function AuthProvider({ children }) {
         return <LoadingBlock />
 
     function doApi(method) {
-        return async function api(path, request, authenticate=true) {
+        return async function api(path, request={}, authenticate=true) {
             if (authenticate && !authenticated)
                 throw Error(`User must be authenticated to use requested API: ${path}`);
             

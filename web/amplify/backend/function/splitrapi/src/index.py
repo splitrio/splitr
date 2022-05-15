@@ -1,19 +1,20 @@
+from datetime import datetime
 from distutils.util import strtobool
 from pydoc import resolve
-from typing import Any, Dict, Iterable, Tuple, TypedDict, Union
+from typing import Any, Dict, Iterable, Optional, Tuple, TypedDict, Union
 
 import json
 import awsgi
 import os
 import boto3
 from flask_cors import CORS
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from werkzeug.exceptions import HTTPException, BadRequest, NotFound
 
 import models
 from validation import ExpenseValidator
 
-from pynamodb.transactions import TransactWrite
+from pynamodb.transactions import TransactWrite, TransactGet
 from pynamodb.connection import Connection
 from pynamodb.exceptions import DoesNotExist
 import pynamodb_encoder.encoder as encoder
@@ -143,6 +144,9 @@ def transform_expense(expense: Dict[str, Any], user_id: str, **kwargs: Transform
     expense['id'] = expense['id'].split('#')[1]
     del expense['sk']
 
+    # Remove expense version
+    del expense['version']
+
     return expense
 
 def parse_bool(value: Union[str, bool]) -> bool:
@@ -266,6 +270,84 @@ def get_expense(expense_id):
     except DoesNotExist:
         raise NotFound()
 
+def confirm_or_rescind_expense(confirm: bool, expense_id: str) -> Response:
+    pk = f'Expense#{expense_id}'
+    user_info = get_user_details()
+    user_id = user_info['cognito:username']
+
+    # Get expense model and corresponding user model
+    # If this fails, either:
+    #   1) The expense doesn't exist
+    #   2) This user is not a part of this expense
+    #   3) The transaction failed due to concurrency
+    # @todo: find a way to distinguish between these states and communicate this to the client
+    with TransactGet(connection=connection) as transaction:
+        expense_future = transaction.get(models.ExpenseModel, pk, pk)
+        user_future = transaction.get(models.ExpenseUserModel, pk, f'User#{user_id}')
+    
+    expense: models.ExpenseModel = expense_future.get()
+    expense_user: models.ExpenseUserModel = user_future.get()
+
+    # Owners cannot confirm/rescind their own expenses
+    if expense.owner == user_id:
+        raise BadRequest(f'Cannot {"confirm" if confirm else "rescind"} own request')
+
+    # Update expense users to indicate that this user has or hasn't paid
+    all_were_paid = all(user.paid for user in expense.users)
+    for user in expense.users:
+        if user.user == user_id and user.paid != confirm:
+            user.paid = confirm
+            break
+    else: raise BadRequest(f'Expense already {"confirmed" if confirm else "rescinded"}')
+    all_paid = all(user.paid for user in expense.users)
+
+    # If this confirmation/rescission will ultimately change whether or not all the users had confirmed,
+    # this will necessitate writing to the owner's own row
+    owner_needs_update = all_paid != all_were_paid
+    owner_expense_user: Optional[models.ExpenseUserModel] = None
+    if owner_needs_update:
+        with TransactGet(connection=connection) as transaction:
+            owner_user_future = transaction.get(models.ExpenseUserModel, pk, f'User#{expense.owner}')
+        owner_expense_user = owner_user_future.get()
+    
+    # Write all data to the database
+    with TransactWrite(connection=connection) as transaction:
+        # The index of the user to be updated
+        user_index = next(i for i in range(len(expense.users)) if expense.users[i].user == user_id)
+
+        # Update expense model
+        transaction.update(
+            expense,
+            actions=[
+                models.ExpenseModel.users[user_index].paid.set(confirm),
+                models.ExpenseModel.users[user_index].paid_time.set(datetime.now() if confirm else None)
+            ]
+        )
+
+        # Update user's tag
+        expense_user.update_from_expense(expense, user_id)
+        transaction.update(
+            expense_user,
+            actions=[models.ExpenseUserModel.tag.set(expense_user.tag)]
+        )
+
+        # Update owner's tag if necessary
+        if owner_needs_update:
+            owner_expense_user.update_from_expense(expense, expense.owner)
+            transaction.update(
+                owner_expense_user,
+                actions=[models.ExpenseUserModel.tag.set(owner_expense_user.tag)]
+            )
+
+    return jsonify("Success")
+
+@app.route(f'{BASE_ROUTE}/<expense_id>/confirm', methods=['POST'])
+def confirm_expense(expense_id):
+    return confirm_or_rescind_expense(True, expense_id)
+
+@app.route(f'{BASE_ROUTE}/<expense_id>/rescind', methods=['POST'])
+def rescind_expense(expense_id):
+    return confirm_or_rescind_expense(False, expense_id)
     
 def handler(event, context):
     return awsgi.response(app, event, context)

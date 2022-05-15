@@ -5,7 +5,17 @@ import os
 
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, KeysOnlyProjection
-from pynamodb.attributes import Attribute, UnicodeAttribute, DiscriminatorAttribute, MapAttribute, NumberAttribute, ListAttribute, BooleanAttribute
+from pynamodb.attributes import (
+    Attribute,
+    UnicodeAttribute,
+    DiscriminatorAttribute,
+    MapAttribute,
+    NumberAttribute,
+    ListAttribute,
+    BooleanAttribute,
+    VersionAttribute,
+    UTCDateTimeAttribute
+)
 from pynamodb.constants import STRING
 
 def _id() -> str:
@@ -54,6 +64,7 @@ class UserStatus(MapAttribute):
     """
     user = UnicodeAttribute()
     paid = BooleanAttribute()
+    paid_time = UTCDateTimeAttribute(null=True)
     wage = NumberAttribute()
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
@@ -72,6 +83,7 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     items = ListAttribute(of=Item, null=True)
     tax = PercentageAmount(null=True)
     tip = PercentageAmount(null=True)
+    version = VersionAttribute()
 
     @classmethod
     def new(cls, **attr: Any) -> 'ExpenseModel':

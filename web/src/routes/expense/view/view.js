@@ -28,6 +28,8 @@ import { Action, Fab } from 'react-tiny-fab';
 import moment from 'moment';
 import Modal from '../../../components/Modal';
 
+const DATE_FORMAT = 'MMM Do, YYYY';
+
 function resolveItemsTooltips(expense) {
     const items = expense.items;
     const subtotal = items.reduce((total, item) => total + item.quantity * item.price, 0);
@@ -166,6 +168,21 @@ function ConfirmPaymentModal({ expense, viewState, onClose }) {
         margin: '0 auto',
     };
     const owner = expense.users.find(u => u.user === expense.owner);
+
+    const auth = useAuth();
+    const [submitting, setSubmitting] = useState(false);
+    const submit = async () => {
+        setSubmitting(true);
+        try {
+            await auth.api.post(`/expenses/${expense.id}/confirm`);
+            window.location.reload();
+        } catch (e) {
+            toast.error(`Couldn't confirm payment: ${e.message}`);
+            console.log(JSON.stringify(e, null, 2));
+        }
+        setSubmitting(false);
+    };
+
     return (
         <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmPayment} onClose={onClose}>
             <CloseHeader onClick={onClose}>
@@ -183,12 +200,24 @@ function ConfirmPaymentModal({ expense, viewState, onClose }) {
             <div style={containerStyles}>
                 <h1 style={currencyStyles}>{formatCurrency(expense.contribution)}</h1>
             </div>
-            <button className='contrast outline'>Yes, I Paid This Amount</button>
+            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>Yes, I Paid This Amount</button>
         </Modal>
     );
 }
 
 function RescindPaymentModal({ expense, viewState, onClose }) {
+    const auth = useAuth();
+    const [submitting, setSubmitting] = useState(false);
+    const submit = async () => {
+        setSubmitting(true);
+        try {
+            await auth.api.post(`/expenses/${expense.id}/rescind`);
+            window.location.reload();
+        } catch (e) {
+            toast.error(`Couldn't rescind payment: ${e.message}`);
+        }
+        setSubmitting(false);
+    };
     return (
         <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.RescindPayment} onClose={onClose}>
             <CloseHeader onClick={onClose}>
@@ -200,7 +229,7 @@ function RescindPaymentModal({ expense, viewState, onClose }) {
                     </p>
                 </hgroup>
             </CloseHeader>
-            <button className='contrast outline'>Yes, Rescind Payment</button>
+            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>Yes, Rescind Payment</button>
         </Modal>
     );
 }
@@ -252,7 +281,7 @@ function ExpenseDetail({ expense }) {
         return `${owner.firstName} ${owner.lastName}`;
     };
 
-    const formattedDate = () => moment(expense.date, 'YYYY-MM-DD').format('MMM Do, YYYY');
+    const formattedDate = () => moment(expense.date, 'YYYY-MM-DD').format(DATE_FORMAT);
     const relation = getRelation(expense, auth.user().getUsername());
 
     const paidUserFirstNames = () => {
@@ -270,6 +299,15 @@ function ExpenseDetail({ expense }) {
     };
 
     const [paidUserNames, paidUserPlural] = paidUserFirstNames();
+
+    const confirmedDate = () => {
+        const dateString = expense.users.find(u => u.user === auth.user().getUsername()).paid_time;
+        const date = moment(dateString);
+        const lastWeek = moment().subtract(7, 'days');
+        if (date.diff(lastWeek, 'days') > 0)
+            return date.fromNow();
+        return `on ${date.format(DATE_FORMAT)}`;
+    };
 
     return (
         <>
@@ -298,7 +336,7 @@ function ExpenseDetail({ expense }) {
                     <h6 className='icons'>
                         <BsFillPatchCheckFill /> Confirmed
                     </h6>
-                    <p>You confirmed payment for this expense.</p>
+                    <p>You confirmed payment for this expense {confirmedDate()}.</p>
                 </hgroup>
             )}
             <hgroup>

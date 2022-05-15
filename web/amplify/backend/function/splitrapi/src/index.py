@@ -9,7 +9,7 @@ import os
 import boto3
 from flask_cors import CORS
 from flask import Flask, Response, jsonify, request
-from werkzeug.exceptions import HTTPException, BadRequest, NotFound
+from werkzeug.exceptions import HTTPException, BadRequest, NotFound, Unauthorized
 
 import models
 from validation import ExpenseValidator
@@ -348,6 +348,32 @@ def confirm_expense(expense_id):
 @app.route(f'{BASE_ROUTE}/<expense_id>/rescind', methods=['POST'])
 def rescind_expense(expense_id):
     return confirm_or_rescind_expense(False, expense_id)
+
+@app.route(f'{BASE_ROUTE}/<expense_id>', methods=['DELETE'])
+def delete_expense(expense_id):
+    pk = f'Expense#{expense_id}'
+    try:
+        expense = models.ExpenseModel.get(pk,pk)
+    except DoesNotExist:
+        return jsonify('Success')
+
+    user_info = get_user_details()
+    user_id = user_info['cognito:username']
+
+    # Only the owner of an expense can delete
+    if expense.owner != user_id:
+        raise Unauthorized()
+    
+    # Expenses can't be deleted if another user has paid
+    if any(user.paid for user in expense.users if user.user != user_id):
+        raise BadRequest("Can't delete an expense with confirmed users.")
+
+    # OK to delete, delete all items with the primary key from the database
+    with TransactWrite(connection=connection) as transaction:
+        for model in models.BaseModel.query(pk):
+            transaction.delete(model)
+    
+    return jsonify('Success')
     
 def handler(event, context):
     return awsgi.response(app, event, context)

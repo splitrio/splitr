@@ -1,15 +1,13 @@
-import { API, Auth } from "aws-amplify";
-import { createContext, useContext, useEffect, useState } from "react";
-import LoadingBlock from "../components/LoadingBlock";
+import { API, Auth } from 'aws-amplify';
+import { createContext, useContext, useEffect, useState } from 'react';
+import LoadingBlock from '../components/LoadingBlock';
 
 const AuthContext = createContext();
 
 function getKey(keyName, defaultValue) {
     let value = localStorage.getItem(keyName);
-    if (value === null)
-        value = sessionStorage.getItem(keyName);
-    if (value === null)
-        return defaultValue;
+    if (value === null) value = sessionStorage.getItem(keyName);
+    if (value === null) return defaultValue;
     try {
         return JSON.parse(value);
     } catch {
@@ -46,8 +44,7 @@ async function loadAuth({ setUser, setAuthenticated }) {
             setUser(user);
             setAuthenticated(true);
         }
-    }
-    catch (e) {
+    } catch (e) {
         console.log(`Initial authentication failed: ${e}`);
     }
 }
@@ -62,28 +59,32 @@ function AuthProvider({ children }) {
     }, []);
 
     // Show loading indicator while authentication state is loading
-    if (loading) 
-        return <LoadingBlock />
+    if (loading) return <LoadingBlock />;
 
     function doApi(method) {
-        return async function api(path, request={}, authenticate=true) {
-            if (authenticate && !authenticated)
-                throw Error(`User must be authenticated to use requested API: ${path}`);
-            
-            const authHeaders = authenticate ? {
-                Authorization: user.signInUserSession.idToken.jwtToken
-            } : {}
+        return async function api(path, request = {}, authenticate = true) {
+            if (authenticate && !authenticated) throw Error(`User must be authenticated to use requested API: ${path}`);
+
+            const authHeaders = authenticate
+                ? {
+                      Authorization: user.signInUserSession.idToken.jwtToken,
+                  }
+                : {};
 
             return await method.call(API, 'splitr', path, {
-                headers: {...authHeaders},
-                ...request
+                headers: { ...authHeaders },
+                ...request,
             });
-        }
+        };
     }
 
     const authObject = Object.freeze({
-        authenticated() { return authenticated },
-        user() { return user },
+        authenticated() {
+            return authenticated;
+        },
+        user() {
+            return user;
+        },
 
         async signUp(accountInfo) {
             await Auth.signUp({
@@ -94,8 +95,8 @@ function AuthProvider({ children }) {
                     given_name: accountInfo.firstName,
                     family_name: accountInfo.lastName,
                     'custom:hourlyWage': accountInfo.hourlyWage,
-                    'custom:accessKey': accountInfo.accessKey
-                }
+                    'custom:accessKey': accountInfo.accessKey,
+                },
             });
         },
 
@@ -125,8 +126,9 @@ function AuthProvider({ children }) {
 
         api: Object.freeze({
             get: doApi(API.get),
-            post: doApi(API.post)
-        })
+            post: doApi(API.post),
+            delete: doApi(API.del),
+        }),
     });
 
     return <AuthContext.Provider value={authObject}>{children}</AuthContext.Provider>;

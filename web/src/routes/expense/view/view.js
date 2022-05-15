@@ -144,6 +144,20 @@ const ViewState = Object.freeze({
 });
 
 function ConfirmDeleteModal({ expense, viewState, onClose }) {
+    const auth = useAuth();
+    const navigate = useNavigate();
+    const [deleting, setDeleting] = useState(false);
+    const del = async () => {
+        setDeleting(true);
+        try {
+            await auth.api.delete(`/expenses/${expense.id}`);
+            navigate(-1, {replace: true});
+        } catch (e) {
+            console.log(e);
+            toast.error(`Couldn't delete expense: ${e.message}`);
+            setDeleting(false);
+        }
+    }; 
     return (
         <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmDelete} onClose={onClose}>
             <CloseHeader onClick={onClose}>
@@ -152,7 +166,7 @@ function ConfirmDeleteModal({ expense, viewState, onClose }) {
                     <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
                 </hgroup>
             </CloseHeader>
-            <button className='danger outline'>Yes, I'm Sure</button>
+            <button className='danger outline' disabled={deleting} aria-busy={deleting} onClick={del}>Yes, I'm Sure</button>
         </Modal>
     );
 }
@@ -179,8 +193,8 @@ function ConfirmPaymentModal({ expense, viewState, onClose }) {
         } catch (e) {
             toast.error(`Couldn't confirm payment: ${e.message}`);
             console.log(JSON.stringify(e, null, 2));
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
 
     return (
@@ -200,7 +214,9 @@ function ConfirmPaymentModal({ expense, viewState, onClose }) {
             <div style={containerStyles}>
                 <h1 style={currencyStyles}>{formatCurrency(expense.contribution)}</h1>
             </div>
-            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>Yes, I Paid This Amount</button>
+            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>
+                Yes, I Paid This Amount
+            </button>
         </Modal>
     );
 }
@@ -215,8 +231,8 @@ function RescindPaymentModal({ expense, viewState, onClose }) {
             window.location.reload();
         } catch (e) {
             toast.error(`Couldn't rescind payment: ${e.message}`);
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
     return (
         <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.RescindPayment} onClose={onClose}>
@@ -229,7 +245,9 @@ function RescindPaymentModal({ expense, viewState, onClose }) {
                     </p>
                 </hgroup>
             </CloseHeader>
-            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>Yes, Rescind Payment</button>
+            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>
+                Yes, Rescind Payment
+            </button>
         </Modal>
     );
 }
@@ -240,7 +258,11 @@ function ExpenseFAB({ expense, relation }) {
     return (
         <>
             {relation !== Relation.OwnerLocked && (
-                <Fab style={{ bottom: '10px', right: '10px' }} icon={<FaChevronDown />} event={'hover'}>
+                <Fab
+                    style={{ bottom: '10px', right: '10px' }}
+                    icon={<FaChevronDown />}
+                    event={'hover'}
+                    alwaysShowTitle={true}>
                     {relation === Relation.Owner && (
                         <Action text='Edit Expense'>
                             <FaPen />
@@ -294,7 +316,7 @@ function ExpenseDetail({ expense }) {
                 if (index === paidUsers.length - 1) return names + ` and ${user.firstName}`;
                 return names + `${user.firstName}, `;
             }, '');
-        };
+        }
         return [firstNames(), paidUsers.length > 1];
     };
 
@@ -304,8 +326,7 @@ function ExpenseDetail({ expense }) {
         const dateString = expense.users.find(u => u.user === auth.user().getUsername()).paid_time;
         const date = moment(dateString);
         const lastWeek = moment().subtract(7, 'days');
-        if (date.diff(lastWeek, 'days') > 0)
-            return date.fromNow();
+        if (date.diff(lastWeek, 'days') > 0) return date.fromNow();
         return `on ${date.format(DATE_FORMAT)}`;
     };
 
@@ -326,8 +347,8 @@ function ExpenseDetail({ expense }) {
                         <FaLock /> Locked
                     </h6>
                     <p>
-                        Since <strong>{paidUserNames}</strong> {paidUserPlural ? 'have' : 'has'} confirmed payment for this expense, it can't be
-                        modified or deleted.
+                        Since <strong>{paidUserNames}</strong> {paidUserPlural ? 'have' : 'has'} confirmed payment for
+                        this expense, it can't be modified or deleted.
                     </p>
                 </hgroup>
             )}

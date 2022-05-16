@@ -13,7 +13,8 @@ import PercentageAmountSelector from '../../../components/form/PercentageAmountS
 
 import './edit.scss';
 import useAuth from '../../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { nanoid } from 'nanoid';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -21,7 +22,7 @@ function isNumeric(value) {
 }
 
 function computeSubtotal(values) {
-    return values.items.reduce((total, {price, quantity}) => total + price * quantity, 0) || null;
+    return values.items.reduce((total, { price, quantity }) => total + price * quantity, 0) || null;
 }
 
 function displaySubtotal(values) {
@@ -37,46 +38,47 @@ function computeTotal(values) {
         if (!isNumeric(percentAmount.value)) return null;
         const value = parseFloat(percentAmount.value);
         switch (percentAmount.type) {
-            case 'percentage': return current * (1 + value / 100);
-            case 'amount': return current + value;
-            default: return current;
+            case 'percentage':
+                return current * (1 + value / 100);
+            case 'amount':
+                return current + value;
+            default:
+                return current;
         }
-    }
+    };
 
     switch (values.type) {
-        case 'single': return !isNumeric(values.amount) ? null : parseFloat(values.amount);
+        case 'single':
+            return !isNumeric(values.amount) ? null : parseFloat(values.amount);
         case 'multiple':
             let total = computeSubtotal(values);
             total = parsePercentAmount(total, values.tax);
             total = parsePercentAmount(total, values.tip);
             return total;
-        default: return null;
+        default:
+            return null;
     }
 }
 
-function submitText(values) {
+function submitText(values, isEditing) {
     const total = computeTotal(values);
-    if (!total) return 'Add Expense';
-    return `Add Expense${total ? ' • $' + total.toFixed(2) : ''}`;
+    const text = isEditing ? 'Update Expense' : 'Add Expense';
+    if (!total) return text;
+    return `${text}${total ? ' • $' + total.toFixed(2) : ''}`;
 }
 
 export default function EditExpense() {
     function getSplitTooltip(split) {
         switch (split) {
-            case 'proportionally': return 'Expense will be split up by salary';
-            case 'equally': return 'Expense will be split equally';
-            case 'individually': return 'You\'ll pay for this expense yourself';
-            default: return '';
+            case 'proportionally':
+                return 'Expense will be split up by salary';
+            case 'equally':
+                return 'Expense will be split equally';
+            case 'individually':
+                return "You'll pay for this expense yourself";
+            default:
+                return '';
         }
-    }
-
-    function updateItem(values, pushValue, newItem) {
-        for (let i = 0; i < values.length; i++)
-            if (values[i].id === newItem.id) {
-                values[i] = newItem;
-                return;
-            }
-        pushValue(newItem);
     }
 
     function onSubmitClicked(errors, values) {
@@ -87,55 +89,96 @@ export default function EditExpense() {
 
     const auth = useAuth();
     const navigate = useNavigate();
-    const [editing, setEditing] = useState(-1);
+
+    const [modalItemIndex, setModalItemIndex] = useState(-1);
+    const [modalState, setModalState] = useState(ItemModal.States.Closed);
+
+    function updateItem(items, addItem, newItem) {
+        if (modalItemIndex >= 0) items[modalItemIndex] = newItem;
+        else {
+            newItem.id = nanoid();
+            addItem(newItem);
+        }
+    }
+
+    function openItemModal(edittingItemIndex = -1) {
+        setModalItemIndex(edittingItemIndex);
+        setModalState(ItemModal.States.Open);
+    }
+
+    // If another page passed an expense object as initial state,
+    // then we are updating an expense, not adding one
+    const { state: navigationState } = useLocation();
+    const isEditing = !!navigationState?.expense;
 
     return (
         <Page>
             <CloseHeader>
-                <hgroup>
-                    <h2>Add Expense</h2>
-                    <h2>Let's get some basic information about the expense</h2>
-                </hgroup>
+                {isEditing ? (
+                    <h2>Edit Expense</h2>
+                ) : (
+                    <hgroup>
+                        <h2>Add Expense</h2>
+                        <h2>Let's get some basic information about the expense</h2>
+                    </hgroup>
+                )}
             </CloseHeader>
             <Formik
-                initialValues={DefaultExpense()}
+                initialValues={navigationState?.expense || DefaultExpense()}
                 validationSchema={ExpenseSchema}
                 onSubmit={async (values, { setSubmitting }) => {
-                    try {
-                        await auth.api.post('/expenses', {body: ExpenseSchema.cast(values)});
+                    if (isEditing) {
+                        toast("This isn't implemented yet!", { icon: '🔥' });
                         setSubmitting(false);
+                        console.log(ExpenseSchema.cast(values));
+                        return;
+                    }
+                    try {
+                        await auth.api.post('/expenses', { body: ExpenseSchema.cast(values) });
                         navigate(-1);
                     } catch (e) {
-                        toast.error("Failed to submit expense. Try again later.");
+                        toast.error('Failed to submit expense. Try again later.');
+                        setSubmitting(false);
                     }
-                }}
-            >
+                }}>
                 {({ values, errors, isSubmitting }) => (
                     <Form noValidate>
                         <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
                         <LabelInput type='date' name='date' label='Date' />
-                        <LabelInput as='select' name='split' label='Split' tooltip={<small>{getSplitTooltip(values.split)}</small>}>
-                            <option value="proportionally">Proportionally</option>
-                            <option value="equally">Equally</option>
-                            <option value="individually">Individually</option>
+                        <LabelInput
+                            as='select'
+                            name='split'
+                            label='Split'
+                            tooltip={<small>{getSplitTooltip(values.split)}</small>}>
+                            <option value='proportionally'>Proportionally</option>
+                            <option value='equally'>Equally</option>
+                            <option value='individually'>Individually</option>
                         </LabelInput>
                         <LabelInput as='select' name='type' label='Expense Type'>
-                            <option value="single">Lump Sum</option>
-                            <option value="multiple">Multiple Items</option>
+                            <option value='single'>Lump Sum</option>
+                            <option value='multiple'>Multiple Items</option>
                         </LabelInput>
 
                         <Show when={values.type === 'single'}>
-                            <LabelInput type='text' name='amount' label='Amount' inputMode="decimal" pattern="[0-9.]*" />
+                            <LabelInput
+                                type='text'
+                                name='amount'
+                                label='Amount'
+                                inputMode='decimal'
+                                pattern='[0-9.]*'
+                            />
                         </Show>
 
                         <Show when={values.type === 'multiple'}>
                             <table role='grid'>
                                 <thead>
                                     <tr>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Quantity</th>
-                                        <th scope="col">Price</th>
-                                        <th scope="col" className='button-col'><FiPlusCircle className='click' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)} /></th>
+                                        <th scope='col'>Name</th>
+                                        <th scope='col'>Quantity</th>
+                                        <th scope='col'>Price</th>
+                                        <th scope='col' className='button-col'>
+                                            <FiPlusCircle className='click' onClick={() => openItemModal()} />
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -143,38 +186,57 @@ export default function EditExpense() {
                                         {({ remove, push }) => (
                                             <>
                                                 <ItemModal
-                                                    item={values.items[editing] || {}}
-                                                    isOpen={editing >= 0}
-                                                    close={() => setEditing(-1)}
-                                                    apply={value => updateItem(values.items, push, value)}
-                                                    remove={() => remove(editing)}
+                                                    state={modalState}
+                                                    editState={
+                                                        modalItemIndex >= 0
+                                                            ? ItemModal.EditStates.Editing
+                                                            : ItemModal.EditStates.Adding
+                                                    }
+                                                    item={values.items[modalItemIndex]}
+                                                    onClose={() => setModalState(ItemModal.States.Closed)}
+                                                    updateItem={updatedItem =>
+                                                        updateItem(values.items, push, updatedItem)
+                                                    }
+                                                    removeItem={() => remove(modalItemIndex)}
                                                 />
 
                                                 {values.items.map((item, index) => (
-                                                    <tr key={item.id} className='click' onClick={() => setEditing(index)}>
+                                                    <tr
+                                                        key={item.id}
+                                                        className='click'
+                                                        onClick={() => openItemModal(index)}>
                                                         <td>{item.name}</td>
                                                         <td>{item.quantity}</td>
                                                         <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
-                                                        <td className='button-col'><FiTrash className='click' onClick={e => { remove(index); e.stopPropagation(); }} /></td>
+                                                        <td className='button-col'>
+                                                            <FiTrash
+                                                                className='click'
+                                                                onClick={e => {
+                                                                    remove(index);
+                                                                    e.stopPropagation();
+                                                                }}
+                                                            />
+                                                        </td>
                                                     </tr>
                                                 ))}
-                                                {values.items.length === 0 &&
+                                                {values.items.length === 0 && (
                                                     <tr>
-                                                        <td height="200px" colSpan="4" valign="center" align="center">
-                                                            <div className='click no-items' onClick={() => setEditing(Number.MAX_SAFE_INTEGER)}>
+                                                        <td height='200px' colSpan='4' valign='center' align='center'>
+                                                            <div
+                                                                className='click no-items'
+                                                                onClick={() => openItemModal()}>
                                                                 Tap to add an item...
                                                             </div>
                                                         </td>
                                                     </tr>
-                                                }
+                                                )}
                                             </>
-                                        )
-                                        }
+                                        )}
                                     </FieldArray>
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <th scope="col">Subtotal</th>
+                                        <th scope='col'>Subtotal</th>
                                         <td></td>
                                         <td>{displaySubtotal(values)}</td>
                                         <td className='button-col'></td>
@@ -184,11 +246,15 @@ export default function EditExpense() {
 
                             <PercentageAmountSelector name='tax' label='Tax' />
                             <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
-
                         </Show>
 
-                        <button className="contrast" type="submit" onClick={() => onSubmitClicked(errors, values)} disabled={isSubmitting} aria-busy={isSubmitting}>
-                            {submitText(values)}
+                        <button
+                            className='contrast'
+                            type='submit'
+                            onClick={() => onSubmitClicked(errors, values)}
+                            disabled={isSubmitting}
+                            aria-busy={isSubmitting}>
+                            {submitText(values, isEditing)}
                         </button>
                     </Form>
                 )}

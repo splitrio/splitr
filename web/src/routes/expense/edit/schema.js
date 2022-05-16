@@ -14,7 +14,7 @@ const PercentageAmountSchema = object({
             is: 'percentage',
             then: schema => schema.min(0, 'Must be between 0 and 100!')
                 .max(100, 'Must be between 0 and 100!')
-        })
+        }).default(null)
 });
 
 const CurrencySchema = NullableNumber()

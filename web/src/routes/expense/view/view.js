@@ -151,13 +151,13 @@ function ConfirmDeleteModal({ expense, viewState, onClose }) {
         setDeleting(true);
         try {
             await auth.api.delete(`/expenses/${expense.id}`);
-            navigate(-1, {replace: true});
+            navigate(-1, { replace: true });
         } catch (e) {
             console.log(e);
             toast.error(`Couldn't delete expense: ${e.message}`);
             setDeleting(false);
         }
-    }; 
+    };
     return (
         <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmDelete} onClose={onClose}>
             <CloseHeader onClick={onClose}>
@@ -166,7 +166,9 @@ function ConfirmDeleteModal({ expense, viewState, onClose }) {
                     <p>Are you sure you want to delete this expense? This action cannot be undone.</p>
                 </hgroup>
             </CloseHeader>
-            <button className='danger outline' disabled={deleting} aria-busy={deleting} onClick={del}>Yes, I'm Sure</button>
+            <button className='danger outline' disabled={deleting} aria-busy={deleting} onClick={del}>
+                Yes, I'm Sure
+            </button>
         </Modal>
     );
 }
@@ -255,12 +257,15 @@ function RescindPaymentModal({ expense, viewState, onClose }) {
 function ExpenseFAB({ expense, relation }) {
     const [state, setState] = useState(ViewState.Viewing);
     const closeModal = () => setState(ViewState.Viewing);
+    const navigate = useNavigate();
     return (
         <>
             {relation !== Relation.OwnerLocked && (
                 <Fab>
                     {relation === Relation.Owner && (
-                        <Action text='Edit Expense'>
+                        <Action
+                            text='Edit Expense'
+                            onClick={() => navigate('/expense', { state: { expense: expense } })}>
                             <FaPen />
                         </Action>
                     )}

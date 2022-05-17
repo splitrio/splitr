@@ -258,6 +258,7 @@ function ExpenseFAB({ expense, relation }) {
     const [state, setState] = useState(ViewState.Viewing);
     const closeModal = () => setState(ViewState.Viewing);
     const navigate = useNavigate();
+
     return (
         <>
             {relation !== Relation.OwnerLocked && (

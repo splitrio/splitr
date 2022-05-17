@@ -153,9 +153,14 @@ def parse_bool(value: Union[str, bool]) -> bool:
     if isinstance(value, bool): return value
     return strtobool(value)
 
-@app.route(BASE_ROUTE, methods=['POST'])
-def create_expense():
-    data = request.get_json()
+def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any]):
+    """
+    Validates client sent data, modifies the given expense, and writes it to the database.
+    Returns the encoded, transformed version of the expense.
+    @expense: An existing or newly created expense model.
+    @data: Data sent from the client which will be validated.
+        If validation fails, `BadRequest` is raised.
+    """
     if not ClientExpenseValidator.validate(data):
         raise BadRequest(ClientExpenseValidator.errors)
     data = ClientExpenseValidator.document
@@ -164,7 +169,6 @@ def create_expense():
     user_id = user_info['cognito:username']
 
     # Validation succeeded, create ExpenseModel from client input
-    expense = models.ExpenseModel.new()
     expense.name = data['name']
     expense.owner = user_id
     expense.date = data['date']
@@ -207,7 +211,23 @@ def create_expense():
         for user in users:
             transaction.save(user)
 
-    return jsonify(transform_expense(Encoder.encode(expense), user_id))
+    return transform_expense(Encoder.encode(expense), user_id)
+
+def verify_expense_modification(expense: models.ExpenseModel, user_id: str):
+    # Only the owner of an expense can delete
+    if expense.owner != user_id:
+        raise Unauthorized()
+    
+    # Expenses can't be deleted if another user has paid
+    if any(user.paid for user in expense.users if user.user != user_id):
+        raise BadRequest("Can't delete/modify an expense with confirmed users.")
+
+@app.route(BASE_ROUTE, methods=['POST'])
+def create_expense():
+    expense = models.ExpenseModel.new()
+    data = request.get_json()
+    transformed = update_and_write_expense(expense, data)
+    return jsonify(transformed), 201
 
 @app.route(BASE_ROUTE, methods=['GET'])
 def get_expenses():
@@ -269,6 +289,22 @@ def get_expense(expense_id):
         return jsonify(transform_expense(encoded, user_id, total=total, contribution=contribution))
     except DoesNotExist:
         raise NotFound()
+
+@app.route(f'{BASE_ROUTE}/<expense_id>', methods=['PUT'])
+def put_expense(expense_id):
+    pk = f'Expense#{expense_id}'
+    try: expense = models.ExpenseModel.get(pk, pk)
+    except DoesNotExist: raise NotFound("No expense with that id found")
+
+    user_info = get_user_details()
+    user_id = user_info['cognito:username']
+
+    # Only users can update their own expenses
+    verify_expense_modification(expense, user_id)
+
+    data = request.get_json()
+    transformed = update_and_write_expense(expense, data)
+    return jsonify(transformed)
 
 def confirm_or_rescind_expense(confirm: bool, expense_id: str) -> Response:
     pk = f'Expense#{expense_id}'
@@ -360,13 +396,8 @@ def delete_expense(expense_id):
     user_info = get_user_details()
     user_id = user_info['cognito:username']
 
-    # Only the owner of an expense can delete
-    if expense.owner != user_id:
-        raise Unauthorized()
-    
-    # Expenses can't be deleted if another user has paid
-    if any(user.paid for user in expense.users if user.user != user_id):
-        raise BadRequest("Can't delete an expense with confirmed users.")
+    # Verify that the user has permission to modify this expense
+    verify_expense_modification(expense, user_id)
 
     # OK to delete, delete all items with the primary key from the database
     with TransactWrite(connection=connection) as transaction:

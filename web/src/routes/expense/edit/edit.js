@@ -67,6 +67,24 @@ function submitText(values, isEditing) {
     return `${text}${total ? ' • $' + total.toFixed(2) : ''}`;
 }
 
+/**
+ * Cleans an existing expense (i.e. one that we are updating)
+ * so that it plays nicely with Formik.
+ */
+function useExistingExpense() {
+    const { state } = useLocation();
+    function cleanExpense() {
+        const expense = state?.expense;
+        if (!expense) return expense;
+        if (expense.tip && !expense.tip.value) expense.tip.value = '';
+        if (expense.tax && !expense.tax.value) expense.tax.value = '';
+        if (!expense.items) expense.items = [];
+        return expense;
+    }
+    const [cleaned] = useState(cleanExpense());
+    return cleaned;
+}
+
 export default function EditExpense() {
     function getSplitTooltip(split) {
         switch (split) {
@@ -108,8 +126,8 @@ export default function EditExpense() {
 
     // If another page passed an expense object as initial state,
     // then we are updating an expense, not adding one
-    const { state: navigationState } = useLocation();
-    const isEditing = !!navigationState?.expense;
+    const existingExpense = useExistingExpense();
+    const isEditing = !!existingExpense;
 
     return (
         <Page>
@@ -124,20 +142,16 @@ export default function EditExpense() {
                 )}
             </CloseHeader>
             <Formik
-                initialValues={navigationState?.expense || DefaultExpense()}
+                initialValues={existingExpense || DefaultExpense()}
                 validationSchema={ExpenseSchema}
                 onSubmit={async (values, { setSubmitting }) => {
-                    if (isEditing) {
-                        toast("This isn't implemented yet!", { icon: '🔥' });
-                        setSubmitting(false);
-                        console.log(ExpenseSchema.cast(values));
-                        return;
-                    }
                     try {
-                        await auth.api.post('/expenses', { body: ExpenseSchema.cast(values) });
+                        const sanitized = ExpenseSchema.cast(values);
+                        if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
+                        else await auth.api.post('/expenses', { body: sanitized });
                         navigate(-1);
                     } catch (e) {
-                        toast.error('Failed to submit expense. Try again later.');
+                        toast.error(`Failed to ${isEditing ? 'save' : 'submit'} expense. Try again later.`);
                         setSubmitting(false);
                     }
                 }}>

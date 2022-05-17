@@ -128,6 +128,7 @@ function AuthProvider({ children }) {
             get: doApi(API.get),
             post: doApi(API.post),
             delete: doApi(API.del),
+            put: doApi(API.put)
         }),
     });
 

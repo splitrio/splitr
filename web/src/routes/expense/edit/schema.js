@@ -27,9 +27,15 @@ const ItemSchema = object({
     price: CurrencySchema.required('Required!')
 });
 
+const EndOfDay = () => {
+    const date = new Date();
+    date.setHours(23, 59, 59);
+    return date;
+}
+
 const ExpenseSchema = object({
     name: NameSchema,
-    date: date().max(new Date(), "Expenses can't be in the future!"),
+    date: date().max(EndOfDay(), "Expenses can't be in the future!"),
     amount: CurrencySchema.when('type',
         {
             is: 'single',

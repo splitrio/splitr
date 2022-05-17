@@ -15,6 +15,7 @@ import './edit.scss';
 import useAuth from '../../../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
+import { defaultsDeep } from 'lodash';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -74,11 +75,9 @@ function submitText(values, isEditing) {
 function useExistingExpense() {
     const { state } = useLocation();
     function cleanExpense() {
-        const expense = state?.expense;
+        let expense = state?.expense;
         if (!expense) return expense;
-        if (expense.tip && !expense.tip.value) expense.tip.value = '';
-        if (expense.tax && !expense.tax.value) expense.tax.value = '';
-        if (!expense.items) expense.items = [];
+        expense = defaultsDeep(expense, DefaultExpense());
         return expense;
     }
     const [cleaned] = useState(cleanExpense());

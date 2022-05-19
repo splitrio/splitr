@@ -27,6 +27,7 @@ import { Action } from 'react-tiny-fab';
 import Fab from '../../../components/Fab';
 import moment from 'moment';
 import Modal from '../../../components/Modal';
+import ConfirmPaymentModal from './ConfirmPaymentModal';
 
 const DATE_FORMAT = 'MMM Do, YYYY';
 
@@ -173,56 +174,6 @@ function ConfirmDeleteModal({ expense, viewState, onClose }) {
     );
 }
 
-function ConfirmPaymentModal({ expense, viewState, onClose }) {
-    const containerStyles = {
-        height: '200px',
-        display: 'flex',
-        alignItems: 'center',
-    };
-    const currencyStyles = {
-        fontSize: '3em',
-        margin: '0 auto',
-    };
-    const owner = expense.users.find(u => u.user === expense.owner);
-
-    const auth = useAuth();
-    const [submitting, setSubmitting] = useState(false);
-    const submit = async () => {
-        setSubmitting(true);
-        try {
-            await auth.api.post(`/expenses/${expense.id}/confirm`);
-            window.location.reload();
-        } catch (e) {
-            toast.error(`Couldn't confirm payment: ${e.message}`);
-            console.log(JSON.stringify(e, null, 2));
-            setSubmitting(false);
-        }
-    };
-
-    return (
-        <Modal shouldCloseOnOverlayClick={true} isOpen={viewState === ViewState.ConfirmPayment} onClose={onClose}>
-            <CloseHeader onClick={onClose}>
-                <hgroup className='no-space'>
-                    <h3>Confirm Payment?</h3>
-                    <p>
-                        This confirms that you've paid{' '}
-                        <strong>
-                            {owner.firstName} {owner.lastName}
-                        </strong>{' '}
-                        this amount.
-                    </p>
-                </hgroup>
-            </CloseHeader>
-            <div style={containerStyles}>
-                <h1 style={currencyStyles}>{formatCurrency(expense.contribution)}</h1>
-            </div>
-            <button className='contrast outline' disabled={submitting} aria-busy={submitting} onClick={submit}>
-                Yes, I Paid This Amount
-            </button>
-        </Modal>
-    );
-}
-
 function RescindPaymentModal({ expense, viewState, onClose }) {
     const auth = useAuth();
     const [submitting, setSubmitting] = useState(false);
@@ -259,6 +210,9 @@ function ExpenseFAB({ expense, relation }) {
     const closeModal = () => setState(ViewState.Viewing);
     const navigate = useNavigate();
 
+    // For expense confirmation modal
+    const owner = expense.users.find(u => u.user === expense.owner);
+
     return (
         <>
             {relation !== Relation.OwnerLocked && (
@@ -290,9 +244,16 @@ function ExpenseFAB({ expense, relation }) {
                     )}
                 </Fab>
             )}
-            <ConfirmDeleteModal expense={expense} onClose={closeModal} viewState={state} />
-            <ConfirmPaymentModal expense={expense} onClose={closeModal} viewState={state} />
+
+            <ConfirmPaymentModal
+                isOpen={state === ViewState.ConfirmPayment}
+                onClose={closeModal}
+                ownerName={`${owner.firstName} ${owner.lastName}`}
+                contribution={expense.contribution}
+                expenseIds={[expense.id]}
+            />
             <RescindPaymentModal expense={expense} onClose={closeModal} viewState={state} />
+            <ConfirmDeleteModal expense={expense} onClose={closeModal} viewState={state} />
         </>
     );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaReceipt, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
@@ -7,6 +7,7 @@ import Fab from '../components/Fab';
 import LoadingBlock from '../components/LoadingBlock';
 import Page from '../components/Page';
 import useAuth from '../hooks/useAuth';
+import { formatCurrency } from '../util/util';
 
 import './dashboard.scss';
 
@@ -18,10 +19,6 @@ function col(pixels) {
     };
 }
 
-function formatCurrency(currency) {
-    return `$${currency.toFixed(2)}`;
-}
-
 const buttonStyle = {
     padding: '2px 20px',
     marginBottom: 0,
@@ -29,16 +26,63 @@ const buttonStyle = {
     fontSize: 'small',
 };
 
-function Loading({ loaded, onMount, children }) {
+function Loadable({ fetch, children }) {
+    // If content is:
+    //  * undefined: content is loading
+    //  * null: content failed to load
+    const [content, setContent] = useState(undefined);
+
+    const fetchContent = useCallback(() => {
+        if (!fetch) return;
+        Promise.resolve(fetch())
+            .then(content => setContent(content))
+            .catch(() => setContent(null));
+    }, [fetch]);
+
     useEffect(() => {
-        if (onMount) onMount();
-    }, [onMount]);
-    if (loaded !== undefined && !loaded) return <LoadingBlock style={{ height: '200px' }} />;
-    if (typeof children === 'function') return children();
+        fetchContent();
+    }, [fetchContent]);
+
+    if (content === undefined) return <LoadingBlock style={{ height: '200px' }} />;
+    if (content === null)
+        return (
+            <div className='empty-container'>
+                <small>
+                    😞 Oops. That didn't load.{' '}
+                    <span onClick={fetchContent} className='link secondary'>
+                        Try again?
+                    </span>
+                </small>
+            </div>
+        );
+
+    if (typeof children === 'function') return children(content);
     return children;
 }
 
-function DueExpenseGroup({ name, expenses, openExpense }) {
+function ExpenseRow({ expense, children }) {
+    const navigate = useNavigate();
+    const openExpense = id => navigate(`/expense/${id}`);
+    return (
+        <tr className='click' onClick={() => openExpense(expense.id)}>
+            {children}
+        </tr>
+    );
+}
+
+function DueExpenses({ groups }) {
+    return Object.keys(groups).length === 0 ? (
+        <div className='empty-container' align='center'>
+            <small>It look's like you're all paid up &#x1F389;</small>
+        </div>
+    ) : (
+        Object.keys(groups).map(group => (
+            <DueExpenseGroup key={group} expenses={groups[group].expenses} name={groups[group].owner.firstName} />
+        ))
+    );
+}
+
+function DueExpenseGroup({ name, expenses }) {
     const [selected, setSelected] = useState(new Set());
     const changeAll = useRef();
 
@@ -91,7 +135,7 @@ function DueExpenseGroup({ name, expenses, openExpense }) {
                 </thead>
                 <tbody>
                     {expenses.map(expense => (
-                        <tr key={expense.id} className='click' onClick={() => openExpense(expense.id)}>
+                        <ExpenseRow key={expense.id} expense={expense}>
                             <td style={col(30)}>
                                 <input
                                     type='checkbox'
@@ -103,7 +147,7 @@ function DueExpenseGroup({ name, expenses, openExpense }) {
                             <td>{expense.name}</td>
                             <td>{expense.date}</td>
                             <td>{formatCurrency(expense.contribution)}</td>
-                        </tr>
+                        </ExpenseRow>
                     ))}
                 </tbody>
             </table>
@@ -111,7 +155,7 @@ function DueExpenseGroup({ name, expenses, openExpense }) {
     );
 }
 
-function BasicExpenseGroup({ expenses, openExpense }) {
+function BasicExpenseGroup({ expenses }) {
     return (
         <>
             {expenses.length === 0 && (
@@ -130,11 +174,11 @@ function BasicExpenseGroup({ expenses, openExpense }) {
                     </thead>
                     <tbody>
                         {expenses.map(expense => (
-                            <tr key={expense.id} className='click' onClick={() => openExpense(expense.id)}>
+                            <ExpenseRow key={expense.id} expense={expense}>
                                 <td>{expense.name}</td>
                                 <td>{expense.date}</td>
                                 <td>{formatCurrency(expense.total)}</td>
-                            </tr>
+                            </ExpenseRow>
                         ))}
                     </tbody>
                 </table>
@@ -146,41 +190,6 @@ function BasicExpenseGroup({ expenses, openExpense }) {
 export default function Dashboard() {
     const auth = useAuth();
     const navigate = useNavigate();
-
-    const [dueExpenses, setDueExpenses] = useState(null);
-    const fetchDue = async () => {
-        if (dueExpenses !== null) return;
-        const result = await auth.api.get('/expenses', {
-            queryStringParameters: { own: false, past: false },
-        });
-        // Map due expenses by who we owe money to
-        result.expenses = result.expenses.reduce((grouped, expense) => {
-            if (!grouped[expense.owner]) grouped[expense.owner] = [];
-            grouped[expense.owner].push(expense);
-            return grouped;
-        }, {});
-        setDueExpenses(result);
-    };
-
-    const [myExpenses, setMyExpenses] = useState(null);
-    const fetchMine = async () => {
-        if (myExpenses !== null) return;
-        const result = await auth.api.get('/expenses', {
-            queryStringParameters: { own: true, past: false },
-        });
-        setMyExpenses(result);
-    };
-
-    const [pastExpenses, setPastExpenses] = useState(null);
-    const fetchPast = async () => {
-        if (pastExpenses !== null) return;
-        const result = await auth.api.get('/expenses', {
-            queryStringParameters: { past: true },
-        });
-        setPastExpenses(result);
-    };
-
-    const openExpense = id => navigate(`/expense/${id}`);
 
     return (
         <Page>
@@ -195,37 +204,34 @@ export default function Dashboard() {
                     <Tab>Past</Tab>
                 </TabList>
                 <TabPanel>
-                    <Loading loaded={dueExpenses} onMount={fetchDue}>
-                        {() => (
-                            <>
-                                {Object.keys(dueExpenses.expenses).length === 0 && (
-                                    <div className='empty-container' align='center'>
-                                        <small>It look's like you're all paid up &#x1F389;</small>
-                                    </div>
-                                )}
-                                {Object.keys(dueExpenses.expenses).map(userID => (
-                                    <DueExpenseGroup
-                                        key={userID}
-                                        expenses={dueExpenses.expenses[userID]}
-                                        name={dueExpenses.users[userID].firstName}
-                                        openExpense={openExpense}
-                                    />
-                                ))}
-                            </>
-                        )}
-                    </Loading>
+                    <Loadable
+                        fetch={() =>
+                            auth.api.get('/expenses', {
+                                queryStringParameters: { own: false, past: false, group: true },
+                            })
+                        }>
+                        {groups => <DueExpenses groups={groups} />}
+                    </Loadable>
                 </TabPanel>
                 <TabPanel>
-                    <Loading loaded={myExpenses} onMount={fetchMine}>
-                        {() => <BasicExpenseGroup expenses={myExpenses.expenses} openExpense={openExpense} />}
-                    </Loading>
+                    <Loadable
+                        fetch={() =>
+                            auth.api.get('/expenses', {
+                                queryStringParameters: { own: true, past: false },
+                            })
+                        }>
+                        {expenses => <BasicExpenseGroup expenses={expenses} />}
+                    </Loadable>
                 </TabPanel>
                 <TabPanel>
-                    <Loading>
-                        <Loading loaded={pastExpenses} onMount={fetchPast}>
-                            {() => <BasicExpenseGroup expenses={pastExpenses.expenses} openExpense={openExpense} />}
-                        </Loading>
-                    </Loading>
+                    <Loadable
+                        fetch={() =>
+                            auth.api.get('/expenses', {
+                                queryStringParameters: { past: true },
+                            })
+                        }>
+                        {expenses => <BasicExpenseGroup expenses={expenses} />}
+                    </Loadable>
                 </TabPanel>
             </Tabs>
             <Fab>

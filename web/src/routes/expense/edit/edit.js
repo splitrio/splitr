@@ -148,7 +148,7 @@ export default function EditExpense() {
                         const sanitized = ExpenseSchema.cast(values);
                         if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
                         else await auth.api.post('/expenses', { body: sanitized });
-                        navigate(-1);
+                        navigate(-1, { state: { xyz: true }});
                     } catch (e) {
                         toast.error(`Failed to ${isEditing ? 'save' : 'submit'} expense. Try again later.`);
                         setSubmitting(false);

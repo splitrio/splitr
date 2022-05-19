@@ -8,6 +8,7 @@ import LoadingBlock from '../components/LoadingBlock';
 import Page from '../components/Page';
 import useAuth from '../hooks/useAuth';
 import { formatCurrency } from '../util/util';
+import ConfirmPaymentModal from './expense/view/ConfirmPaymentModal';
 
 import './dashboard.scss';
 
@@ -22,7 +23,7 @@ function col(pixels) {
 const buttonStyle = {
     padding: '2px 20px',
     marginBottom: 0,
-    borderRadius: '100px',
+    borderRadius: '10px',
     fontSize: 'small',
 };
 
@@ -114,12 +115,25 @@ function DueExpenseGroup({ name, expenses }) {
         }
     }, [expenses, selected]);
 
+    const [confirmingPayment, setConfirmingPayment] = useState(false);
+
+    const getSelectedExpenses = () => {
+        if (selected.size === 0) return expenses;
+        return expenses.filter(expense => selected.has(expense.id));
+    };
+
+    const selectedExpenses = getSelectedExpenses();
+    const selectedContribution = selectedExpenses.reduce((total, expense) => total + expense.contribution, 0);
+
     return (
         <>
             <nav>
-                <h4 className='no-margin'>{name}</h4>
+                <h5 className='no-margin'>{name}</h5>
                 <div style={{ display: 'flex', alignContent: 'center' }}>
-                    <button style={buttonStyle}> {selected.size > 0 ? 'Pay Selected' : 'Pay All'}</button>
+                    <button className='outline contrast' style={buttonStyle} onClick={() => setConfirmingPayment(true)}>
+                        {' '}
+                        {selected.size > 0 ? 'Pay Selected' : 'Pay All'}
+                    </button>
                 </div>
             </nav>
             <table>
@@ -151,6 +165,13 @@ function DueExpenseGroup({ name, expenses }) {
                     ))}
                 </tbody>
             </table>
+            <ConfirmPaymentModal
+                ownerName={name}
+                contribution={selectedContribution}
+                expenseIds={selectedExpenses.map(e => e.id)}
+                isOpen={confirmingPayment}
+                onClose={() => setConfirmingPayment(false)}
+            />
         </>
     );
 }

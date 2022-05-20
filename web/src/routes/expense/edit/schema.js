@@ -47,7 +47,8 @@ const ExpenseSchema = object({
             then: schema => schema.min(1, 'Must have at least one item!')
         }),
     tax: PercentageAmountSchema,
-    tip: PercentageAmountSchema
+    tip: PercentageAmountSchema,
+    splitWith: array(string()).optional().default([])
 });
 
 const DefaultItem = () => ({
@@ -64,7 +65,8 @@ const DefaultExpense = () => ({
     amount: '',
     items: [],
     tax: { type: 'percentage', value: 10.15 },
-    tip: { type: 'percentage', value: '' }
+    tip: { type: 'percentage', value: '' },
+    splitWith: []
 });
 
 export { ItemSchema, ExpenseSchema, DefaultItem, DefaultExpense };

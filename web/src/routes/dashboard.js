@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FaReceipt, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import { Action } from 'react-tiny-fab';
 import Fab from '../components/Fab';
-import LoadingBlock from '../components/LoadingBlock';
 import Page from '../components/Page';
 import useAuth from '../hooks/useAuth';
 import { formatCurrency } from '../util/util';
 import ConfirmPaymentModal from './expense/view/ConfirmPaymentModal';
+import Loadable from '../components/Loadable';
 
 import './dashboard.scss';
 
@@ -26,40 +26,6 @@ const buttonStyle = {
     borderRadius: '10px',
     fontSize: 'small',
 };
-
-function Loadable({ fetch, children }) {
-    // If content is:
-    //  * undefined: content is loading
-    //  * null: content failed to load
-    const [content, setContent] = useState(undefined);
-
-    const fetchContent = useCallback(() => {
-        if (!fetch) return;
-        Promise.resolve(fetch())
-            .then(content => setContent(content))
-            .catch(() => setContent(null));
-    }, [fetch]);
-
-    useEffect(() => {
-        fetchContent();
-    }, [fetchContent]);
-
-    if (content === undefined) return <LoadingBlock style={{ height: '200px' }} />;
-    if (content === null)
-        return (
-            <div className='empty-container'>
-                <small>
-                    😞 Oops. That didn't load.{' '}
-                    <span onClick={fetchContent} className='link secondary'>
-                        Try again?
-                    </span>
-                </small>
-            </div>
-        );
-
-    if (typeof children === 'function') return children(content);
-    return children;
-}
 
 function ExpenseRow({ expense, children }) {
     const navigate = useNavigate();

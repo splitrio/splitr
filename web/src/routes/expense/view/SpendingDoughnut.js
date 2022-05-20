@@ -182,7 +182,7 @@ export default function SpendingDoughnut({ expense }) {
             data={data}
             options={{
                 layout: {
-                    padding: 10,
+                    padding: 15,
                 },
                 maintainAspectRatio: false,
                 elements: {

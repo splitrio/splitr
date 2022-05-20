@@ -69,6 +69,12 @@ _ExpenseSchemaBase = {
         'type': 'string',
         'allowed': ['proportionally', 'equally', 'individually']
     },
+    'splitWith': {
+        'type': 'list',
+        'schema': {
+            'type': 'string'
+        }
+    },
     'type': {
         'type': 'string',
         'allowed': ['single', 'multiple']

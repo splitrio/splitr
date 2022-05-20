@@ -1,4 +1,5 @@
 @use '../node_modules/@picocss/pico/css/pico.min.css';
+@use '../node_modules/react-responsive-select/dist/react-responsive-select.css';
 
 h1 {
     --font-size: 2rem;
@@ -88,14 +89,14 @@ dialog>article {
 }
 
 :is(button, input[type="submit"], input[type="button"], [role="button"]).danger {
-	--background-color: var(--del-color);
-	--border-color: var(--del-color);
-	--color: var(--primary-inverse);
+    --background-color: var(--del-color);
+    --border-color: var(--del-color);
+    --color: var(--primary-inverse);
 
     &.outline {
         --color: var(--del-color);
         --background-color: transparent;
-        
+
         &:is([aria-current], :hover, :active, :focus) {
             --background-color: var(--del-color);
             --color: var(--primary-inverse);
@@ -111,6 +112,7 @@ ul.rtf {
 
     // Render FAB below modals
     z-index: 900;
+
     .rtf--mb {
         z-index: 901;
     }
@@ -143,6 +145,70 @@ ul.rtf {
 
 .ReactModal__Overlay {
     z-index: 1000;
+}
+
+/**
+ * react-responsive-select fixes to interop with Pico.css
+ */
+.rrs {
+    font-family: unset;
+
+    .rrs__button {
+        @extend select;
+
+        .rrs__label {
+            color: var(--form-element-color);
+            border: none !important;
+            padding: 0 4px;
+
+            .rrs__multiselect-label__text {
+                overflow: unset;
+            }
+            
+            .rrs__multiselect-label__badge {
+                border: none;
+                background-color: var(--muted-color);
+                color: var(--muted-border-color);
+                display: flex;
+                align-items: center;
+                margin-left: 10px;
+            }
+        }
+
+        &:focus {
+            --border-color: var(--form-element-active-border-color);
+        }
+    }
+
+    .rrs__options {
+        background-color: var(--background-color);
+        border: var(--border-width) solid var(--form-element-border-color);
+
+        @media screen and (min-width: 768px) {
+            top: calc(1.5em + 2 * var(--form-element-spacing-vertical));
+        }
+
+        .rrs__option {
+            &:hover {
+                background-color: var(--dropdown-hover-background-color);
+                color: unset;
+            }
+
+            &:focus {
+                outline: none;
+            }
+
+            &.rrs__option--next-selection {
+                background-color: var(--primary-focus);
+                color: unset;
+            }
+
+            &.rrs__option--selected {
+                color: var(--primary);
+                font-weight: bold;
+            }
+        }
+    }
 }
 
 /**

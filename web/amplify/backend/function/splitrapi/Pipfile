@@ -14,3 +14,5 @@ pynamodb-encoder = {path = "./pynamodb-encoder"}
 
 [requires]
 python_version = "3.8"
+
+[dev-packages]

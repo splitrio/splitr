@@ -16,6 +16,7 @@ import useAuth from '../../../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import { defaultsDeep } from 'lodash';
+import Loadable from '../../../components/Loadable';
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
@@ -72,19 +73,25 @@ function submitText(values, isEditing) {
  * Cleans an existing expense (i.e. one that we are updating)
  * so that it plays nicely with Formik.
  */
-function useExistingExpense() {
+function useExistingExpense(users) {
+    const auth = useAuth();
     const { state } = useLocation();
     function cleanExpense() {
         let expense = state?.expense;
         if (!expense) return expense;
         expense = defaultsDeep(expense, DefaultExpense());
+        if (expense.users.length === users.length) expense.splitWith = [];
+        else
+            expense.splitWith = expense.users
+                .filter(user => user.user !== auth.user().getUsername())
+                .map(user => user.user);
         return expense;
     }
     const [cleaned] = useState(cleanExpense());
     return cleaned;
 }
 
-export default function EditExpense() {
+function EditExpenseView({ users }) {
     function getSplitTooltip(split) {
         switch (split) {
             case 'proportionally':
@@ -123,13 +130,32 @@ export default function EditExpense() {
         setModalState(ItemModal.States.Open);
     }
 
+    function renderSplitWithLabel({ options }) {
+        const maxPeople = 2;
+        const numShow = Math.min(maxPeople, options.length);
+        const remaining = options.length - numShow;
+
+        let name = '';
+        for (let i = 0; i < numShow; i++) {
+            const option = options[i];
+            name += option.value ? users.find(u => u.user === option.value).firstName : option.text;
+            if (i < options.length - 2) name += ', ';
+            else name += ' ';
+            if (i === options.length - 2 && options.length > 1 && remaining === 0) name += 'and ';
+        }
+
+        if (remaining > 0) name += `and ${remaining} ${remaining > 1 ? 'others' : 'other'}`;
+
+        return name;
+    }
+
     // If another page passed an expense object as initial state,
     // then we are updating an expense, not adding one
-    const existingExpense = useExistingExpense();
+    const existingExpense = useExistingExpense(users);
     const isEditing = !!existingExpense;
 
     return (
-        <Page>
+        <>
             <CloseHeader>
                 {isEditing ? (
                     <h2>Edit Expense</h2>
@@ -148,7 +174,7 @@ export default function EditExpense() {
                         const sanitized = ExpenseSchema.cast(values);
                         if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
                         else await auth.api.post('/expenses', { body: sanitized });
-                        navigate(-1, { state: { xyz: true }});
+                        navigate(-1);
                     } catch (e) {
                         toast.error(`Failed to ${isEditing ? 'save' : 'submit'} expense. Try again later.`);
                         setSubmitting(false);
@@ -167,6 +193,23 @@ export default function EditExpense() {
                             <option value='equally'>Equally</option>
                             <option value='individually'>Individually</option>
                         </LabelInput>
+                        <Show when={values.split !== 'individually'}>
+                            <LabelInput
+                                as='select'
+                                name='splitWith'
+                                label='Split With'
+                                placeholder='Everyone'
+                                multiple
+                                renderLabel={renderSplitWithLabel}>
+                                {users
+                                    .filter(user => user.user !== auth.user().getUsername())
+                                    .map(user => (
+                                        <option key={user.user} value={user.user}>
+                                            {user.firstName} {user.lastName}
+                                        </option>
+                                    ))}
+                            </LabelInput>
+                        </Show>
                         <LabelInput as='select' name='type' label='Expense Type'>
                             <option value='single'>Lump Sum</option>
                             <option value='multiple'>Multiple Items</option>
@@ -272,6 +315,15 @@ export default function EditExpense() {
                     </Form>
                 )}
             </Formik>
+        </>
+    );
+}
+
+export default function EditExpense() {
+    const auth = useAuth();
+    return (
+        <Page>
+            <Loadable fetch={() => auth.api.get('/users')}>{users => <EditExpenseView users={users} />}</Loadable>
         </Page>
     );
 }

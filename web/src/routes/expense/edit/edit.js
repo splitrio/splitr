@@ -18,8 +18,8 @@ import { nanoid } from 'nanoid';
 import { defaultsDeep } from 'lodash';
 import Loadable from '../../../components/Loadable';
 
-const SHOW_EXPENSE_JSON = true;
-const SHOW_EXPENSE_JSON_CASTED = true;
+const SHOW_EXPENSE_JSON = false;
+const SHOW_EXPENSE_JSON_CASTED = false;
 
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);

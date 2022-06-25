@@ -13,6 +13,9 @@
       "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-splitr-dev-222809-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
     },
     "categories": {
+      "auth": {
+        "splitr2ac25091": {}
+      },
       "function": {
         "preSignUp": {
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
@@ -22,9 +25,6 @@
           "deploymentBucketName": "amplify-splitr-dev-222809-deployment",
           "s3Key": "amplify-builds/splitrapi-4c4c45366b455574536d-build.zip"
         }
-      },
-      "auth": {
-        "splitr2ac25091": {}
       }
     }
   }

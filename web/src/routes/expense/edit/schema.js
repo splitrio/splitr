@@ -1,7 +1,7 @@
 import { string, object, date, array } from "yup";
 import { NullableNumber } from "../../../util/schema";
 import moment from "moment";
-    
+
 const NameSchema = string()
     .min(3, 'Too Short!')
     .max(50, 'Too Long!')
@@ -48,7 +48,8 @@ const ExpenseSchema = object({
         }),
     tax: PercentageAmountSchema,
     tip: PercentageAmountSchema,
-    splitWith: array(string()).optional().default([])
+    splitWith: array(string()).optional().default([]),
+    notes: string().nullable().transform(s => /^\s*$/.test(s) ? null : s.trim())
 });
 
 const DefaultItem = () => ({
@@ -66,7 +67,8 @@ const DefaultExpense = () => ({
     items: [],
     tax: { type: 'percentage', value: 10.15 },
     tip: { type: 'percentage', value: '' },
-    splitWith: []
+    splitWith: [],
+    notes: ''
 });
 
 export { ItemSchema, ExpenseSchema, DefaultItem, DefaultExpense };

@@ -21,6 +21,7 @@ import {
     FaCheck,
     FaTimes,
     FaLock,
+    FaComment
 } from 'react-icons/fa';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
 import { Action } from 'react-tiny-fab';
@@ -344,6 +345,14 @@ function ExpenseDetail({ expense }) {
                     {formatCurrency(expense.contribution)}
                 </p>
             </hgroup>
+            {expense.notes && (
+                <hgroup>
+                    <h6 className='icons'>
+                        <FaComment /> Notes
+                    </h6>
+                    <p>{expense.notes}</p>
+                </hgroup>
+            )}
 
             {expense.type === 'multiple' && <ItemsDetail expense={expense} />}
         </>

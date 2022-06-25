@@ -6,7 +6,6 @@ import os
 from pynamodb.models import Model
 from pynamodb.indexes import GlobalSecondaryIndex, KeysOnlyProjection
 from pynamodb.attributes import (
-    Attribute,
     UnicodeAttribute,
     DiscriminatorAttribute,
     MapAttribute,
@@ -83,6 +82,7 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     items = ListAttribute(of=Item, null=True)
     tax = PercentageAmount(null=True)
     tip = PercentageAmount(null=True)
+    notes = UnicodeAttribute(null=True)
     version = VersionAttribute()
 
     @classmethod

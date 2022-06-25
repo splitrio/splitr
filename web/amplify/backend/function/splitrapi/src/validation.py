@@ -79,6 +79,10 @@ _ExpenseSchemaBase = {
         'type': 'string',
         'allowed': ['single', 'multiple']
     },
+    'notes': {
+        'type': 'string',
+        'nullable': True
+    }
 }
 """
 Schema common to all expenses

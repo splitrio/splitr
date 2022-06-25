@@ -18,6 +18,9 @@ import { nanoid } from 'nanoid';
 import { defaultsDeep } from 'lodash';
 import Loadable from '../../../components/Loadable';
 
+const SHOW_EXPENSE_JSON = true;
+const SHOW_EXPENSE_JSON_CASTED = true;
+
 function isNumeric(value) {
     if (typeof value === 'number') return !isNaN(value);
     return !isNaN(value) && !isNaN(parseFloat(value));
@@ -302,6 +305,29 @@ function EditExpenseView({ users }) {
 
                             <PercentageAmountSelector name='tax' label='Tax' />
                             <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
+                        </Show>
+
+                        <LabelInput
+                            as='textarea'
+                            rows='4'
+                            type='text'
+                            name='notes'
+                            label='Notes'
+                            placeholder='Tell others more about this expense!'
+                        />
+
+                        <Show when={SHOW_EXPENSE_JSON}>
+                            <b>
+                                <code>Expense JSON</code>
+                            </b>
+                            <pre>{JSON.stringify(values, null, 2)}</pre>
+                        </Show>
+
+                        <Show when={SHOW_EXPENSE_JSON_CASTED && ExpenseSchema.isValidSync(values)}>
+                            <b>
+                                <code>Casted Expense JSON</code>
+                            </b>
+                            <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre>
                         </Show>
 
                         <button

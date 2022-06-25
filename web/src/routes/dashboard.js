@@ -37,15 +37,25 @@ function ExpenseRow({ expense, children }) {
     );
 }
 
+function ExpensesContainer({ empty, message = 'Nothing to see here &#128064;', children }) {
+    if (empty)
+        return (
+            <div className='empty-container' align='center'>
+                <small>{message}</small>
+            </div>
+        );
+    return children;
+}
+
 function DueExpenses({ groups }) {
-    return Object.keys(groups).length === 0 ? (
-        <div className='empty-container' align='center'>
-            <small>It look's like you're all paid up &#x1F389;</small>
-        </div>
-    ) : (
-        Object.keys(groups).map(group => (
-            <DueExpenseGroup key={group} expenses={groups[group].expenses} name={groups[group].owner.firstName} />
-        ))
+    return (
+        <ExpensesContainer
+            empty={Object.keys(groups).length === 0}
+            message="It look's like you're all paid up &#x1F389;">
+            {Object.keys(groups).map(group => (
+                <DueExpenseGroup key={group} expenses={groups[group].expenses} name={groups[group].owner.firstName} />
+            ))}
+        </ExpensesContainer>
     );
 }
 
@@ -142,35 +152,53 @@ function DueExpenseGroup({ name, expenses }) {
     );
 }
 
-function BasicExpenseGroup({ expenses }) {
+function ActiveExpenseGroup({ expenses }) {
     return (
-        <>
-            {expenses.length === 0 && (
-                <div className='empty-container'>
-                    <small>Nothing to see here &#128064;</small>
-                </div>
-            )}
-            {expenses.length > 0 && (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Date</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {expenses.map(expense => (
-                            <ExpenseRow key={expense.id} expense={expense}>
-                                <td>{expense.name}</td>
-                                <td>{expense.date}</td>
-                                <td>{formatCurrency(expense.total)}</td>
-                            </ExpenseRow>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </>
+        <ExpensesContainer empty={expenses.length === 0}>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {expenses.map(expense => (
+                        <ExpenseRow key={expense.id} expense={expense}>
+                            <td>{expense.name}</td>
+                            <td>{expense.date}</td>
+                            <td>{formatCurrency(expense.total)}</td>
+                        </ExpenseRow>
+                    ))}
+                </tbody>
+            </table>
+        </ExpensesContainer>
+    );
+}
+
+function PastExpenseGroup({ expenses }) {
+    return (
+        <ExpensesContainer empty={expenses.length === 0}>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {expenses.map(expense => (
+                        <ExpenseRow key={expense.id} expense={expense}>
+                            <td>{expense.name}</td>
+                            <td>{expense.date}</td>
+                            <td>{formatCurrency(expense.total)}</td>
+                        </ExpenseRow>
+                    ))}
+                </tbody>
+            </table>
+        </ExpensesContainer>
     );
 }
 
@@ -207,7 +235,7 @@ export default function Dashboard() {
                                 queryStringParameters: { own: true, past: false },
                             })
                         }>
-                        {expenses => <BasicExpenseGroup expenses={expenses} />}
+                        {expenses => <ActiveExpenseGroup expenses={expenses} />}
                     </Loadable>
                 </TabPanel>
                 <TabPanel>
@@ -217,7 +245,7 @@ export default function Dashboard() {
                                 queryStringParameters: { past: true },
                             })
                         }>
-                        {expenses => <BasicExpenseGroup expenses={expenses} />}
+                        {expenses => <PastExpenseGroup expenses={expenses} />}
                     </Loadable>
                 </TabPanel>
             </Tabs>

@@ -53,3 +53,15 @@
         }
     }
 }
+
+.empty-container {
+    display: flex;
+    align-items: center;
+    height: 200px;
+    background-color: rgba(8, 8, 8, 0.1);
+    border-radius: 10px;
+}
+
+.empty-container > * {
+    margin: 0 auto;
+}

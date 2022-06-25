@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 import './Page.scss';
 
 const pageMotion = {
-    initial: {opacity: 0, y: -50},
-    animate: {opacity: 1, y: 0, transition: {duration: 0.2}},
-    exit: {opacity: 0, y: -50, transition: {duration: 0.2}}
+    initial: { opacity: 0, y: -50 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+    exit: { opacity: 0, y: -50, transition: { duration: 0.2 } },
 };
 
-export default function Page(props) {
+export default function Page({ nav, children }) {
     const auth = useAuth();
     const navigate = useNavigate();
 
@@ -19,35 +19,54 @@ export default function Page(props) {
             await auth.signOut();
             navigate('/login');
         } catch (e) {
-            toast.error(`Couldn't sign out: ${e.message}`)
+            toast.error(`Couldn't sign out: ${e.message}`);
         }
     }
 
     return (
-        <div id="pageContent">
-            <nav className="container-fluid">
+        <div id='pageContent'>
+            <nav className='container-fluid'>
                 <ul>
-                    <li><Link to="/" className="contrast"><strong>splitr</strong></Link></li>
+                    <li>
+                        <Link to='/' className='contrast'>
+                            <strong>splitr</strong>
+                        </Link>
+                    </li>
                 </ul>
+                {nav && (
+                    <ul>
+                        <li>{nav}</li>
+                    </ul>
+                )}
             </nav>
-            
-            <motion.main id="pageMain" className="container" initial="initial" animate="animate" exit="exit" variants={pageMotion}>
-                <article className="grid">
-                    <div id="page">
-                        {props.children}
-                    </div>
+
+            <motion.main
+                id='pageMain'
+                className='container'
+                initial='initial'
+                animate='animate'
+                exit='exit'
+                variants={pageMotion}>
+                <article className='grid'>
+                    <div id='page'>{children}</div>
                 </article>
             </motion.main>
 
-            <footer className="container-fluid">
+            <footer className='container-fluid'>
                 <small>
-                    Built with <a href="https://picocss.com" className="secondary">Pico</a>
+                    Built with{' '}
+                    <a href='https://picocss.com' className='secondary'>
+                        Pico
+                    </a>
                 </small>
-                {auth.authenticated() &&
+                {auth.authenticated() && (
                     <small>
-                        &nbsp;• <span onClick={signOut} className='link secondary'>Sign Out</span>
+                        &nbsp;•{' '}
+                        <span onClick={signOut} className='link secondary'>
+                            Sign Out
+                        </span>
                     </small>
-                }
+                )}
             </footer>
         </div>
     );

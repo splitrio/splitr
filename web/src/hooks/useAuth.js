@@ -117,6 +117,14 @@ function AuthProvider({ children }) {
             setAuthenticated(true);
         },
 
+        async forgotPassword(username) {
+            await Auth.forgotPassword(username);
+        },
+
+        async forgotPasswordSubmit(username, code, newPassword) {
+            await Auth.forgotPasswordSubmit(username, code, newPassword);
+        },
+
         async signOut() {
             if (!authenticated) throw new Error('User was not signed in');
             await Auth.signOut();

@@ -12,13 +12,12 @@ const customModalStyles = {
     }
 };
 
-export default function Modal({ isOpen, onClose, shouldCloseOnOverlayClick=false, children }) {
+export default function Modal({ onClose, children, ...props }) {
     return <ReactModal
         closeTimeoutMS={200}
-        isOpen={isOpen}
         onRequestClose={onClose}
         style={customModalStyles}
-        shouldCloseOnOverlayClick={shouldCloseOnOverlayClick}
+        {...props}
     >
         <dialog open>
             <article style={{ width: '100%', paddingTop: '30px', paddingBottom: 0 }}>

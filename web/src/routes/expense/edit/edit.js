@@ -22,7 +22,7 @@ import ImageGallery from '../../../components/ImageGallery';
 import { Storage } from 'aws-amplify';
 import { v4 as uuid } from 'uuid';
 
-const SHOW_EXPENSE_JSON = true;
+const SHOW_EXPENSE_JSON = false;
 const SHOW_EXPENSE_JSON_CASTED = false;
 
 function isNumeric(value) {

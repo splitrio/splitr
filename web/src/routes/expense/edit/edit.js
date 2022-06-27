@@ -17,8 +17,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import { defaultsDeep } from 'lodash';
 import Loadable from '../../../components/Loadable';
+import ImageGallery from '../../../components/ImageGallery';
 
-const SHOW_EXPENSE_JSON = false;
+import { Storage } from 'aws-amplify';
+import { v4 as uuid } from 'uuid';
+
+const SHOW_EXPENSE_JSON = true;
 const SHOW_EXPENSE_JSON_CASTED = false;
 
 function isNumeric(value) {
@@ -175,6 +179,22 @@ function EditExpenseView({ users }) {
                 onSubmit={async (values, { setSubmitting }) => {
                     try {
                         const sanitized = ExpenseSchema.cast(values);
+
+                        // Upload all outstanding images
+                        for (let i = 0; i < sanitized.images.length; i++) {
+                            const image = sanitized.images[i];
+                            if (!image.startsWith('blob')) continue;
+
+                            // TODO: BAD. Creates duplicate copy of image in memory
+                            const blob = await fetch(image).then(r => r.blob());
+                            const result = await Storage.put(uuid(), blob, {
+                                level: 'protected',
+                                contentType: blob.type
+                            });
+
+                            sanitized.images[i] = result.key;
+                        }
+
                         if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
                         else await auth.api.post('/expenses', { body: sanitized });
                         navigate(-1);
@@ -315,6 +335,8 @@ function EditExpenseView({ users }) {
                             label='Notes'
                             placeholder='Tell others more about this expense!'
                         />
+
+                        <ImageGallery form name='images' />
 
                         <Show when={SHOW_EXPENSE_JSON}>
                             <b>

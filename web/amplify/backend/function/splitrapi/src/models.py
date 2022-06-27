@@ -83,6 +83,7 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     tax = PercentageAmount(null=True)
     tip = PercentageAmount(null=True)
     notes = UnicodeAttribute(null=True)
+    images = ListAttribute(of=UnicodeAttribute, null=True)
     version = VersionAttribute()
 
     @classmethod

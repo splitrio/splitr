@@ -1,5 +1,6 @@
 import { Chart, DoughnutController, ArcElement, Tooltip } from 'chart.js';
 import { useEffect, useRef } from 'react';
+import useDeepCompareEffect from 'use-deep-compare-effect';
 import useAuth from '../../../hooks/useAuth';
 import useTheme from '../../../hooks/useTheme';
 import { formatCurrency } from '../../../util/util';
@@ -144,7 +145,7 @@ function SpendingDoughnutChart({ data, options = {} }) {
     }, []);
 
     // Update the chart any time its data or options changes
-    useEffect(() => {
+    useDeepCompareEffect(() => {
         if (!chartRef.current) return;
         chartRef.current.options = options;
         chartRef.current.data = data;

@@ -1,7 +1,6 @@
 import { Field, useFormikContext } from 'formik';
 import AnimateHeight from 'react-animate-height';
 import get from 'lodash/get';
-import './LabelInput.scss';
 import useLast from '../../hooks/useLast';
 import { useState } from 'react';
 import { ModalCloseButton, Select } from 'react-responsive-select';

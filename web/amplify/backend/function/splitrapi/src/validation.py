@@ -83,6 +83,13 @@ _ExpenseSchemaBase = {
     'notes': {
         'type': 'string',
         'nullable': True
+    },
+    'images': {
+        'type': 'list',
+        'schema': {
+            'type': 'string'
+        },
+        'nullable': True
     }
 }
 """

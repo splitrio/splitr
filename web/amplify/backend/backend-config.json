@@ -55,6 +55,13 @@
             "Arn",
             "StreamArn"
           ]
+        },
+        {
+          "category": "storage",
+          "resourceName": "splitrStorage",
+          "attributes": [
+            "BucketName"
+          ]
         }
       ]
     }
@@ -79,6 +86,11 @@
     "splitr": {
       "service": "DynamoDB",
       "providerPlugin": "awscloudformation"
+    },
+    "splitrStorage": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": []
     }
   }
 }

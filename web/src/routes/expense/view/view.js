@@ -21,7 +21,7 @@ import {
     FaCheck,
     FaTimes,
     FaLock,
-    FaComment
+    FaComment,
 } from 'react-icons/fa';
 import { BsFillPatchCheckFill } from 'react-icons/bs';
 import { Action } from 'react-tiny-fab';
@@ -29,6 +29,7 @@ import Fab from '../../../components/Fab';
 import moment from 'moment';
 import Modal from '../../../components/Modal';
 import ConfirmPaymentModal from './ConfirmPaymentModal';
+import ImageGallery from '../../../components/ImageGallery';
 
 const DATE_FORMAT = 'MMM Do, YYYY';
 
@@ -350,11 +351,13 @@ function ExpenseDetail({ expense }) {
                     <h6 className='icons'>
                         <FaComment /> Notes
                     </h6>
-                    <p>{expense.notes}</p>
+                    <p style={{whiteSpace: 'pre-wrap'}}>{expense.notes}</p>
                 </hgroup>
             )}
 
             {expense.type === 'multiple' && <ItemsDetail expense={expense} />}
+
+            {expense.images && expense.images.length > 0 && <ImageGallery images={expense.images} />}
         </>
     );
 }

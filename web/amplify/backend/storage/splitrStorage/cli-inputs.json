@@ -1,0 +1,13 @@
+{
+  "resourceName": "splitrStorage",
+  "policyUUID": "7f010afa",
+  "bucketName": "splitr-storage",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

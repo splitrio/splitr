@@ -1,0 +1,89 @@
+$image-size: 150px;
+$border-radius: 5px;
+
+$max-lightbox-width: 90vw;
+$max-lightbox-height: 80vh;
+$min-lightbox-width: 300px;
+
+.image-container {
+
+    img,
+    .add-image-button {
+        border-radius: $border-radius;
+        width: $image-size;
+        height: $image-size;
+    }
+
+    img {
+        object-fit: cover;
+    }
+
+    .add-image-button {
+        border: var(--border-width) solid var(--form-element-border-color);
+        display: flex;
+
+        svg {
+            margin: auto;
+            color: var(--form-element-color);
+        }
+    }
+}
+
+.lightbox {
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    .lightbox-background {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.4);
+        width: 100%;
+        height: 100%;
+    }
+
+    .lightbox-image-container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        img {
+            z-index: 1001;
+            max-height: $max-lightbox-height;
+            max-width: $max-lightbox-width;
+            min-width: min($min-lightbox-width, $max-lightbox-width);
+            border-radius: $border-radius;
+            object-fit: cover;
+            transition: transform 0.3s ease-in-out;
+
+            &.lightbox-image-zoomed {
+                transform: scale(1.5);
+            }
+        }
+    }
+
+    .lightbox-nav {
+        z-index: 1003;
+        position: absolute;
+        top: 0;
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+
+        // Icons
+        nav > ul > li > svg {
+            color: white;
+        }
+    }
+}
+
+.image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: left;
+    gap: 10px;
+    margin-bottom: var(--spacing);
+}

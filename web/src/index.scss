@@ -105,6 +105,25 @@ dialog>article {
 }
 
 /**
+ * Forms
+ */
+.form-group {
+    display: block;
+    position: relative;
+
+    >label {
+        position: absolute;
+        z-index: 1;
+        top: -0.8em;
+        left: 1em;
+        font-size: small;
+        padding: 0 5px;
+        background: linear-gradient(180deg, transparent 45%, var(--background-color) 50%);
+        color: var(--color);
+    }
+}
+
+/**
  * react-tiny-fab fixes to interop with Pico.css
 */
 
@@ -164,7 +183,7 @@ ul.rtf {
             .rrs__multiselect-label__text {
                 overflow: unset;
             }
-            
+
             .rrs__multiselect-label__badge {
                 border: none;
                 background-color: var(--muted-color);

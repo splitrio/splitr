@@ -211,6 +211,7 @@ def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any])
     expense.split = data["split"]
     expense.expenseType = data["type"]
     expense.notes = data["notes"]
+    expense.images = data["images"]
 
     # Seperate fields are defined for either single or multiple item expenses
     if expense.expenseType == "single":

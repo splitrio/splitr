@@ -31,6 +31,10 @@
     "storagesplitrStreamArn": {
       "Type": "String",
       "Default": "storagesplitrStreamArn"
+    },
+    "storagesplitrStorageBucketName": {
+      "Type": "String",
+      "Default": "storagesplitrStorageBucketName"
     }
   },
   "Conditions": {
@@ -97,6 +101,9 @@
             },
             "STORAGE_SPLITR_STREAMARN": {
               "Ref": "storagesplitrStreamArn"
+            },
+            "STORAGE_SPLITRSTORAGE_BUCKETNAME": {
+              "Ref": "storagesplitrStorageBucketName"
             }
           }
         },
@@ -343,6 +350,45 @@
                         "Ref": "storagesplitrArn"
                       },
                       "index/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": "s3:ListBucket",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "storagesplitrStorageBucketName"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "storagesplitrStorageBucketName"
+                      },
+                      "/*"
                     ]
                   ]
                 }

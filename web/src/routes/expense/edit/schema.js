@@ -49,7 +49,8 @@ const ExpenseSchema = object({
     tax: PercentageAmountSchema,
     tip: PercentageAmountSchema,
     splitWith: array(string()).optional().default([]),
-    notes: string().nullable().transform(s => /^\s*$/.test(s) ? null : s.trim())
+    notes: string().nullable().transform(s => /^\s*$/.test(s) ? null : s.trim()),
+    images: array(string().required()).nullable(),
 });
 
 const DefaultItem = () => ({
@@ -68,7 +69,8 @@ const DefaultExpense = () => ({
     tax: { type: 'percentage', value: 10.15 },
     tip: { type: 'percentage', value: '' },
     splitWith: [],
-    notes: ''
+    notes: '',
+    images: []
 });
 
 export { ItemSchema, ExpenseSchema, DefaultItem, DefaultExpense };

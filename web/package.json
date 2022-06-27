@@ -8,6 +8,7 @@
     "@testing-library/react": "^13.0.1",
     "@testing-library/user-event": "^13.5.0",
     "aws-amplify": "^4.3.20",
+    "body-scroll-lock": "^4.0.0-beta.0",
     "chart.js": "^3.7.1",
     "formik": "^2.2.9",
     "framer-motion": "^6.3.3",
@@ -27,6 +28,8 @@
     "react-tabs": "^5.1.0",
     "react-tiny-fab": "^4.0.4",
     "sass": "^1.50.0",
+    "use-deep-compare-effect": "^1.8.1",
+    "uuid": "^8.3.2",
     "web-vitals": "^2.1.4",
     "yup": "^0.32.11"
   },

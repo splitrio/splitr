@@ -82,8 +82,13 @@ function AuthProvider({ children }) {
         authenticated() {
             return authenticated;
         },
+
         user() {
             return user;
+        },
+
+        async credentials() {
+            return await Auth.currentUserCredentials();
         },
 
         async signUp(accountInfo) {

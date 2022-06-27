@@ -357,7 +357,7 @@ function ExpenseDetail({ expense }) {
 
             {expense.type === 'multiple' && <ItemsDetail expense={expense} />}
 
-            {expense.images && expense.images.length > 0 && <ImageGallery images={expense.images} />}
+            {expense.images && expense.images.length > 0 && <ImageGallery images={expense.images}/>}
         </>
     );
 }

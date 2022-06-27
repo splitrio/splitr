@@ -13,11 +13,16 @@ import { Storage } from 'aws-amplify';
 function Image({ src, keys, open }) {
     const [url, setUrl] = useState(src);
 
+    // If keys is true, we need to resolve each src prop
+    // as an S3 key (unless it is a local blob url)
     useEffect(() => {
         async function resolveUrl() {
             if (!keys || src.startsWith('blob')) return;
             try {
-                setUrl(await Storage.get(src, { level: 'protected' }));
+                // Decode identity id from S3 key
+                // See expense/edit/edit.js for more info
+                const [ identityId ] = src.split('!');
+                setUrl(await Storage.get(src, { level: 'protected', identityId: identityId }));
             } catch (e) {
                 console.log(`Failed to resolve pre-signed image URL: ${e}`);
             }

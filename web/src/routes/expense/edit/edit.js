@@ -181,13 +181,18 @@ function EditExpenseView({ users }) {
                         const sanitized = ExpenseSchema.cast(values);
 
                         // Upload all outstanding images
+                        const identityId = (await auth.credentials()).identityId;
                         for (let i = 0; i < sanitized.images.length; i++) {
                             const image = sanitized.images[i];
                             if (!image.startsWith('blob')) continue;
 
+                            // S3 Image keys are of the form [IDENTITY_ID]![UUID]
+                            // to allow other clients to find the owning identity id easily
+                            const key = `${identityId}!${uuid()}`
+
                             // TODO: BAD. Creates duplicate copy of image in memory
                             const blob = await fetch(image).then(r => r.blob());
-                            const result = await Storage.put(uuid(), blob, {
+                            const result = await Storage.put(key, blob, {
                                 level: 'protected',
                                 contentType: blob.type
                             });

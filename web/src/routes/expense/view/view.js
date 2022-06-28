@@ -195,8 +195,8 @@ function RescindPaymentModal({ expense, viewState, onClose }) {
                 <hgroup>
                     <h3>Rescind Payment?</h3>
                     <p>
-                        Make sure to confirm again once you've paid{' '}
-                        <strong>{expense.users.find(u => u.user === expense.owner).firstName}</strong> back 💰
+                        Make sure to confirm again once you've paid <strong>{expense.ownerInfo.firstName}</strong> back
+                        💰
                     </p>
                 </hgroup>
             </CloseHeader>
@@ -211,9 +211,6 @@ function ExpenseFAB({ expense, relation }) {
     const [state, setState] = useState(ViewState.Viewing);
     const closeModal = () => setState(ViewState.Viewing);
     const navigate = useNavigate();
-
-    // For expense confirmation modal
-    const owner = expense.users.find(u => u.user === expense.owner);
 
     return (
         <>
@@ -250,7 +247,7 @@ function ExpenseFAB({ expense, relation }) {
             <ConfirmPaymentModal
                 isOpen={state === ViewState.ConfirmPayment}
                 onClose={closeModal}
-                ownerName={`${owner.firstName} ${owner.lastName}`}
+                ownerName={`${expense.ownerInfo.firstName} ${expense.ownerInfo.lastName}`}
                 contribution={expense.contribution}
                 expenseIds={[expense.id]}
             />
@@ -263,9 +260,8 @@ function ExpenseFAB({ expense, relation }) {
 function ExpenseDetail({ expense }) {
     const auth = useAuth();
     const ownerName = () => {
-        const owner = expense.users.find(u => u.user === expense.owner);
-        if (owner.user === auth.user().getUsername()) return 'You';
-        return `${owner.firstName} ${owner.lastName}`;
+        if (expense.owner === auth.user().getUsername()) return 'You';
+        return `${expense.ownerInfo.firstName} ${expense.ownerInfo.lastName}`;
     };
 
     const formattedDate = () => moment(expense.date, 'YYYY-MM-DD').format(DATE_FORMAT);
@@ -337,27 +333,29 @@ function ExpenseDetail({ expense }) {
                 </h6>
                 <p style={{ textTransform: 'capitalize' }}>{expense.split}</p>
             </hgroup>
-            <hgroup>
-                <h6 className='icons'>
-                    <FaCommentsDollar /> Contribution
-                </h6>
-                <p>
-                    {expense.users.find(u => u.user === auth.user().getUsername()).paid ? 'You paid' : "You'll pay"}{' '}
-                    {formatCurrency(expense.contribution)}
-                </p>
-            </hgroup>
+            {expense.contribution !== 0 && (
+                <hgroup>
+                    <h6 className='icons'>
+                        <FaCommentsDollar /> Contribution
+                    </h6>
+                    <p>
+                        {expense.owner === auth.user().getUsername() || expense.users.find(u => u.user === auth.user().getUsername()).paid ? 'You paid' : "You'll pay"}{' '}
+                        {formatCurrency(expense.contribution)}
+                    </p>
+                </hgroup>
+            )}
             {expense.notes && (
                 <hgroup>
                     <h6 className='icons'>
                         <FaComment /> Notes
                     </h6>
-                    <p style={{whiteSpace: 'pre-wrap'}}>{expense.notes}</p>
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{expense.notes}</p>
                 </hgroup>
             )}
 
             {expense.type === 'multiple' && <ItemsDetail expense={expense} />}
 
-            {expense.images && expense.images.length > 0 && <ImageGallery images={expense.images}/>}
+            {expense.images && expense.images.length > 0 && <ImageGallery images={expense.images} />}
         </>
     );
 }

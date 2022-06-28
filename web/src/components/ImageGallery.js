@@ -5,7 +5,6 @@ import { RiImageAddFill } from 'react-icons/ri';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useFormikContext } from 'formik';
-import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 import get from 'lodash/get';
 
 import { Storage } from 'aws-amplify';
@@ -21,7 +20,7 @@ function Image({ src, keys, open }) {
             try {
                 // Decode identity id from S3 key
                 // See expense/edit/edit.js for more info
-                const [ identityId ] = src.split('!');
+                const [identityId] = src.split('!');
                 setUrl(await Storage.get(src, { level: 'protected', identityId: identityId }));
             } catch (e) {
                 console.log(`Failed to resolve pre-signed image URL: ${e}`);
@@ -69,9 +68,8 @@ function Lightbox({ src, close, removeImage, editable }) {
     const [zoomed, toggleZoomed] = useReducer(zoomed => !zoomed, false);
 
     useEffect(() => {
-        const targetElement = document.querySelector('#lightbox');
-        disableBodyScroll(targetElement);
-        return () => enableBodyScroll(targetElement);
+        document.body.style.overflow = 'hidden';
+        return () => (document.body.style.overflow = 'unset');
     });
 
     return (

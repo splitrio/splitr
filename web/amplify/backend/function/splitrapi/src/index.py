@@ -1,7 +1,7 @@
 from datetime import datetime
 from distutils.util import strtobool
 from pydoc import resolve
-from typing import Any, Dict, Iterable, Optional, Tuple, TypedDict, Union
+from typing import Any, Dict, Iterable, Optional, Set, Tuple, TypedDict, Union
 
 import json
 import awsgi
@@ -59,13 +59,12 @@ class UserInfo(TypedDict):
     lastName: str
     wage: float
 
-
 def resolve_user_infos(user_ids: Optional[Iterable[str]] = None) -> Dict[str, UserInfo]:
     """
     Given user IDs, populates a client-facing mapping of user IDs to user info.
     @users: An iterable of user IDs. If None, gets information about all users.
     """
-    def resolve_user_info(user):
+    def resolve_user_info(user) -> UserInfo:
         user_info: UserInfo = {}
         attrs = user['UserAttributes'] if 'UserAttributes' in user else user['Attributes']
         for attr in attrs:
@@ -135,14 +134,14 @@ def resolve_expense_contribution(
     @users: A mapping of user ids to info about those users.
         Must map `user_id` and all users inside `expense['users']`
     """
+    # If user not found in users array, contribution is necessarily 0
+    if user_id not in (user["user"] for user in expense["users"]): return 0
     if expense["split"] == "individually":
         return total
     elif expense["split"] == "equally":
         return total / len(expense["users"])
     elif expense["split"] == "proportionally":
-        my_wage = next(
-            user["wage"] for user in expense["users"] if user["user"] == user_id
-        )
+        my_wage = next(user["wage"] for user in expense["users"] if user["user"] == user_id)
         total_wages = sum(user["wage"] for user in expense["users"])
         return (my_wage / total_wages) * total
     else:
@@ -227,56 +226,30 @@ def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any])
         expense.tip = models.PercentageAmount(**data["tip"])
 
     # Get all users who are a part of this transaction to add into DynamoDB
-    user_ids = None
-    new_user_statuses = None
-    own_user_status = models.UserStatus(
-        user=user_id, paid=True, wage=float(user_info["custom:hourlyWage"])
-    )
+    user_ids: Set[str] = None
+    new_user_statuses: Iterable[models.UserStatus] = None
     if expense.split == "individually":
         # If expense is split individually, we only need to include the owner
-        user_ids = [user_id]
-        new_user_statuses = [own_user_status]
+        user_ids = set([user_id])
+        new_user_statuses = [models.UserStatus(user=user_id, paid=True, wage=float(user_info["custom:hourlyWage"]))]
     else:
-        if not data["splitWith"]:
-            # splitWith array is empty: this means add everyone to the expense
-            # See docs: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html#CognitoIdentityProvider.Client.list_users
-            cognito_users = cognito.list_users(UserPoolId=USER_POOL_ID)
-            user_ids = (user["Username"] for user in cognito_users["Users"])
-            new_user_statuses = [
-                models.UserStatus(
-                    user=user["Username"],
-                    paid=user["Username"] == user_id,
-                    wage=next(
-                        float(attr["Value"])
-                        for attr in user["Attributes"]
-                        if attr["Name"] == "custom:hourlyWage"
-                    ),
-                )
-                for user in cognito_users["Users"]
-            ]
-        else:
-            # splitWith array contains the users that should be added to the expense, in addition to the current user
-            user_infos = resolve_user_infos(
-                user for user in data["splitWith"] if user != user_id
-            )
-            if not user_infos:
-                raise BadRequest(
-                    "splitWith is non-empty, but contains no unique user ids"
-                )
-            new_user_statuses = [
-                own_user_status,
-                *(
-                    models.UserStatus(user=id, paid=False, wage=info["wage"])
-                    for id, info in user_infos.items()
-                ),
-            ]
-            user_ids = [user_id, *user_infos.keys()]
+        # users array contains the users that should be added to the expense
+        if not data["users"]: raise BadRequest("Non-individual expenses must have at least one user")
+
+        user_infos = resolve_user_infos(info["id"] for info in data["users"])
+        user_ids = set(user_infos.keys())
+        new_user_statuses = [models.UserStatus(user=id, paid=(id==user_id), wage=info["wage"]) for id, info in user_infos.items()]
+
+
+    # Ensure that the owning user gets an ExpenseUserModel dedicated to them,
+    # regardless of whether or not they were in the `expense["users"]` array passed by the client
+    user_ids.add(user_id)
 
     # It is possible that some users have been removed from the expense
-    # We must delete these user's database entries associated with the expense
+    # We must delete these users' database entries associated with the expense
     user_models_to_delete = []
     if expense.users is not None:
-        delete_user_ids = set(user.user for user in expense.users) - set(user.user for user in new_user_statuses)
+        delete_user_ids = set(user.user for user in expense.users) - user_ids
         user_models_to_delete = (models.ExpenseUserModel(expense.id, f'User#{id}') for id in delete_user_ids)
 
     expense.users = new_user_statuses
@@ -295,20 +268,18 @@ def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any])
 
 
 def verify_expense_modification(expense: models.ExpenseModel, user_id: str):
-    # Only the owner of an expense can delete
+    # Only the owner of an expense can delete or modify
     if expense.owner != user_id:
-        raise Unauthorized()
+        raise Unauthorized("Only the owner of an expense can modify or delete it")
 
     # Expenses can't be deleted if another user has paid
     if any(user.paid for user in expense.users if user.user != user_id):
-        raise BadRequest(
-            "Can't delete/modify an expense with confirmed users.")
+        raise BadRequest("Can't delete/modify an expense with confirmed users.")
 
 
 @app.route('/users', methods=['GET'])
 def get_users():
-    users = [{'user': user_id, **info}
-             for user_id, info in resolve_user_infos().items()]
+    users = [{'user': user_id, **info} for user_id, info in resolve_user_infos().items()]
     return jsonify(users)
 
 
@@ -377,7 +348,7 @@ def get_expense(expense_id):
         # Users can only see expenses they are a part of
         user_info = get_user_details()
         user_id = user_info["cognito:username"]
-        if user_id not in (user.user for user in model.users):
+        if user_id != model.owner and user_id not in (user.user for user in model.users):
             raise NotFound()
 
         encoded = Encoder.encode(model)
@@ -403,6 +374,9 @@ def get_expense(expense_id):
 
             # Add proportional contribution
             user["proportion"] = user["contribution"] / total
+
+        # Add information about the owner of the expense
+        encoded["ownerInfo"] = next(iter(resolve_user_infos([encoded["owner"]]).values()))
 
         return jsonify(
             transform_expense(encoded, user_id, total=total,
@@ -455,9 +429,7 @@ def confirm_or_rescind_expenses(confirm: bool, expense_ids: Iterable[str]) -> Re
 
             # Owners cannot confirm/rescind their own expenses
             if expense.owner == user_id:
-                raise BadRequest(
-                    f'Cannot {"confirm" if confirm else "rescind"} own request'
-                )
+                raise BadRequest(f'Cannot {"confirm" if confirm else "rescind"} own request')
 
             # Update expense users to indicate that this user has or hasn't paid
             all_were_paid = all(user.paid for user in expense.users)
@@ -509,8 +481,7 @@ def confirm_or_rescind_expenses(confirm: bool, expense_ids: Iterable[str]) -> Re
                 owner_expense_user.update_from_expense(expense, expense.owner)
                 write_transaction.update(
                     owner_expense_user,
-                    actions=[models.ExpenseUserModel.tag.set(
-                        owner_expense_user.tag)],
+                    actions=[models.ExpenseUserModel.tag.set(owner_expense_user.tag)],
                 )
 
     return jsonify("Success")

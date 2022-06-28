@@ -149,7 +149,6 @@ class ExpenseUserModel(BaseModel, discriminator='ExpenseUser'):
                 return all(user.paid for user in expense.users)
             return next(user.paid for user in expense.users if user.user == user_id)
 
-        is_past = is_expense_past()
         is_owner = expense.owner == user_id
-        self.tag = f'{"Past" if is_past else ("Owner" if is_owner else "Payer")}#{user_id}'
+        self.tag = f'{"Past" if is_expense_past() else ("Owner" if is_owner else "Payer")}#{user_id}'
         self.date = expense.date

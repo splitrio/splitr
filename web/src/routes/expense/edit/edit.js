@@ -81,17 +81,12 @@ function submitText(values, isEditing) {
  * so that it plays nicely with Formik.
  */
 function useExistingExpense(users) {
-    const auth = useAuth();
     const { state } = useLocation();
     function cleanExpense() {
         let expense = state?.expense;
         if (!expense) return expense;
         expense = defaultsDeep(expense, DefaultExpense());
-        if (expense.users.length === users.length) expense.splitWith = [];
-        else
-            expense.splitWith = expense.users
-                .filter(user => user.user !== auth.user().getUsername())
-                .map(user => user.user);
+        expense.users = expense.users.map(user => user.user);
         return expense;
     }
     const [cleaned] = useState(cleanExpense());
@@ -137,7 +132,7 @@ function EditExpenseView({ users }) {
         setModalState(ItemModal.States.Open);
     }
 
-    function renderSplitWithLabel({ options }) {
+    function renderUsersLabel({ options }) {
         const maxPeople = 2;
         const numShow = Math.min(maxPeople, options.length);
         const remaining = options.length - numShow;
@@ -188,17 +183,24 @@ function EditExpenseView({ users }) {
 
                             // S3 Image keys are of the form [IDENTITY_ID]![UUID]
                             // to allow other clients to find the owning identity id easily
-                            const key = `${identityId}!${uuid()}`
+                            const key = `${identityId}!${uuid()}`;
 
                             // TODO: BAD. Creates duplicate copy of image in memory
                             const blob = await fetch(image).then(r => r.blob());
                             const result = await Storage.put(key, blob, {
                                 level: 'protected',
-                                contentType: blob.type
+                                contentType: blob.type,
                             });
 
                             sanitized.images[i] = result.key;
                         }
+
+                        // Assemble user objects to send with the request
+                        // If no users selected, add all users to this expense
+                        if (!sanitized.users) sanitized.users = users.map(user => ({ id: user.user }));
+                        else sanitized.users = sanitized.users.map(user => ({ id: user }));
+
+                        // alert(JSON.stringify(sanitized, null, 2));
 
                         if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
                         else await auth.api.post('/expenses', { body: sanitized });
@@ -224,18 +226,16 @@ function EditExpenseView({ users }) {
                         <Show when={values.split !== 'individually'}>
                             <LabelInput
                                 as='select'
-                                name='splitWith'
-                                label='Split With'
+                                name='users'
+                                label="Who's Paying"
                                 placeholder='Everyone'
                                 multiple
-                                renderLabel={renderSplitWithLabel}>
-                                {users
-                                    .filter(user => user.user !== auth.user().getUsername())
-                                    .map(user => (
-                                        <option key={user.user} value={user.user}>
-                                            {user.firstName} {user.lastName}
-                                        </option>
-                                    ))}
+                                renderLabel={renderUsersLabel}>
+                                {users.map(user => (
+                                    <option key={user.user} value={user.user}>
+                                        {user.firstName} {user.lastName}
+                                    </option>
+                                ))}
                             </LabelInput>
                         </Show>
                         <LabelInput as='select' name='type' label='Expense Type'>

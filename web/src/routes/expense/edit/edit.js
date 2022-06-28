@@ -197,7 +197,7 @@ function EditExpenseView({ users }) {
 
                         // Assemble user objects to send with the request
                         // If no users selected, add all users to this expense
-                        if (!sanitized.users) sanitized.users = users.map(user => ({ id: user.user }));
+                        if (sanitized.users.length === 0) sanitized.users = users.map(user => ({ id: user.user }));
                         else sanitized.users = sanitized.users.map(user => ({ id: user }));
 
                         // alert(JSON.stringify(sanitized, null, 2));

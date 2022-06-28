@@ -15,7 +15,7 @@ import './edit.scss';
 import useAuth from '../../../hooks/useAuth';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
-import { defaultsDeep } from 'lodash';
+import { defaultsDeep, cloneDeep } from 'lodash';
 import Loadable from '../../../components/Loadable';
 import ImageGallery from '../../../components/ImageGallery';
 
@@ -85,7 +85,7 @@ function useExistingExpense(users) {
     function cleanExpense() {
         let expense = state?.expense;
         if (!expense) return expense;
-        expense = defaultsDeep(expense, DefaultExpense());
+        expense = defaultsDeep(cloneDeep(expense), DefaultExpense());
         expense.users = expense.users.map(user => user.user);
         return expense;
     }

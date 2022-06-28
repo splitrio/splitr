@@ -66,7 +66,7 @@ const DefaultExpense = () => ({
     type: 'single',
     amount: '',
     items: [],
-    tax: { type: 'percentage', value: 10.15 },
+    tax: { type: 'percentage', value: 10.25 },
     tip: { type: 'percentage', value: '' },
     users: [],
     notes: '',

@@ -19,6 +19,7 @@ $min-lightbox-width: 300px;
     }
 
     .add-image-button {
+        background-color: var(--form-element-background-color);
         border: var(--border-width) solid var(--form-element-border-color);
         display: flex;
 

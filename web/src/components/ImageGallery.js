@@ -30,9 +30,15 @@ function Image({ src, keys, open }) {
     }, [src, keys]);
 
     return (
-        <div className='image-container click' onClick={() => open(url)}>
+        <motion.div
+            key={src}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            className='image-container click'
+            onClick={() => open(url)}>
             <img src={url} alt='' />
-        </div>
+        </motion.div>
     );
 }
 
@@ -135,9 +141,11 @@ export default function ImageGallery({ images, form = false, keys = true, name, 
         <div className='form-group'>
             {form && actualImages.length === 0 && <label htmlFor={name}>{label}</label>}
             <div className='image-gallery'>
-                {actualImages.map((image, index) => (
-                    <Image key={image} keys={keys} src={image} open={src => setSelected([index, src])} />
-                ))}
+                <AnimatePresence>
+                    {actualImages.map((image, index) => (
+                        <Image key={image} keys={keys} src={image} open={src => setSelected([index, src])} />
+                    ))}
+                </AnimatePresence>
                 {form && <AddImageButton addImage={addImage} />}
                 <AnimatePresence>
                     {selected !== null && (

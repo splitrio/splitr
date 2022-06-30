@@ -21,6 +21,7 @@ import ImageGallery from '../../../components/ImageGallery';
 
 import { Storage } from 'aws-amplify';
 import { v4 as uuid } from 'uuid';
+import { Accordion, AccordionItem } from '../../../components/Accordion';
 
 const SHOW_EXPENSE_JSON = false;
 const SHOW_EXPENSE_JSON_CASTED = false;
@@ -212,136 +213,159 @@ function EditExpenseView({ users }) {
                 }}>
                 {({ values, errors, isSubmitting }) => (
                     <Form noValidate>
-                        <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
-                        <LabelInput type='date' name='date' label='Date' />
-                        <LabelInput
-                            as='select'
-                            name='split'
-                            label='Split'
-                            tooltip={<small>{getSplitTooltip(values.split)}</small>}>
-                            <option value='proportionally'>Proportionally</option>
-                            <option value='equally'>Equally</option>
-                            <option value='individually'>Individually</option>
-                        </LabelInput>
-                        <Show when={values.split !== 'individually'}>
-                            <LabelInput
-                                as='select'
-                                name='users'
-                                label="Who's Paying"
-                                placeholder='Everyone'
-                                multiple
-                                renderLabel={renderUsersLabel}>
-                                {users.map(user => (
-                                    <option key={user.user} value={user.user}>
-                                        {user.firstName} {user.lastName}
-                                    </option>
-                                ))}
-                            </LabelInput>
-                        </Show>
-                        <LabelInput as='select' name='type' label='Expense Type'>
-                            <option value='single'>Lump Sum</option>
-                            <option value='multiple'>Multiple Items</option>
-                        </LabelInput>
+                        <Accordion layout={[
+                            ['basic', ['name', 'date', 'split', 'users']],
+                            ['cost', ['type', 'amount', 'items', 'tax', 'tip']],
+                            ['other', ['notes', 'images']]
+                        ]}>
+                            <AccordionItem name='basic' label='Basic' open>
+                                <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
+                                <LabelInput type='date' name='date' label='Date' />
+                                <LabelInput
+                                    as='select'
+                                    name='split'
+                                    label='Split'
+                                    tooltip={<small>{getSplitTooltip(values.split)}</small>}>
+                                    <option value='proportionally'>Proportionally</option>
+                                    <option value='equally'>Equally</option>
+                                    <option value='individually'>Individually</option>
+                                </LabelInput>
+                                <Show when={values.split !== 'individually'}>
+                                    <LabelInput
+                                        as='select'
+                                        name='users'
+                                        label="Who's Paying"
+                                        placeholder='Everyone'
+                                        multiple
+                                        renderLabel={renderUsersLabel}>
+                                        {users.map(user => (
+                                            <option key={user.user} value={user.user}>
+                                                {user.firstName} {user.lastName}
+                                            </option>
+                                        ))}
+                                    </LabelInput>
+                                </Show>
+                            </AccordionItem>
 
-                        <Show when={values.type === 'single'}>
-                            <LabelInput
-                                type='text'
-                                name='amount'
-                                label='Amount'
-                                inputMode='decimal'
-                                pattern='[0-9.]*'
-                            />
-                        </Show>
+                            {/* <Show when={values.split === 'equally'}>
+                                <AccordionItem label='Weights'>
+                                    <p>split weights</p>
+                                </AccordionItem>
+                            </Show> */}
 
-                        <Show when={values.type === 'multiple'}>
-                            <table role='grid'>
-                                <thead>
-                                    <tr>
-                                        <th scope='col'>Name</th>
-                                        <th scope='col'>Quantity</th>
-                                        <th scope='col'>Price</th>
-                                        <th scope='col' className='button-col'>
-                                            <FiPlusCircle className='click' onClick={() => openItemModal()} />
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <FieldArray name='items'>
-                                        {({ remove, push }) => (
-                                            <>
-                                                <ItemModal
-                                                    state={modalState}
-                                                    editState={
-                                                        modalItemIndex >= 0
-                                                            ? ItemModal.EditStates.Editing
-                                                            : ItemModal.EditStates.Adding
-                                                    }
-                                                    item={values.items[modalItemIndex]}
-                                                    onClose={() => setModalState(ItemModal.States.Closed)}
-                                                    updateItem={updatedItem =>
-                                                        updateItem(values.items, push, updatedItem)
-                                                    }
-                                                    removeItem={() => remove(modalItemIndex)}
-                                                />
+                            <AccordionItem name='cost' label='Cost'>
+                                <LabelInput as='select' name='type' label='Expense Type'>
+                                    <option value='single'>Lump Sum</option>
+                                    <option value='multiple'>Multiple Items</option>
+                                </LabelInput>
 
-                                                {values.items.map((item, index) => (
-                                                    <tr
-                                                        key={item.id}
-                                                        className='click'
-                                                        onClick={() => openItemModal(index)}>
-                                                        <td>{item.name}</td>
-                                                        <td>{item.quantity}</td>
-                                                        <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
-                                                        <td className='button-col'>
-                                                            <FiTrash
+                                <Show when={values.type === 'single'}>
+                                    <LabelInput
+                                        type='text'
+                                        name='amount'
+                                        label='Amount'
+                                        inputMode='decimal'
+                                        pattern='[0-9.]*'
+                                    />
+                                </Show>
+
+                                <Show when={values.type === 'multiple'}>
+                                    <table role='grid'>
+                                        <thead>
+                                            <tr>
+                                                <th scope='col'>Name</th>
+                                                <th scope='col'>Quantity</th>
+                                                <th scope='col'>Price</th>
+                                                <th scope='col' className='button-col'>
+                                                    <FiPlusCircle className='click' onClick={() => openItemModal()} />
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <FieldArray name='items'>
+                                                {({ remove, push }) => (
+                                                    <>
+                                                        <ItemModal
+                                                            state={modalState}
+                                                            editState={
+                                                                modalItemIndex >= 0
+                                                                    ? ItemModal.EditStates.Editing
+                                                                    : ItemModal.EditStates.Adding
+                                                            }
+                                                            item={values.items[modalItemIndex]}
+                                                            onClose={() => setModalState(ItemModal.States.Closed)}
+                                                            updateItem={updatedItem =>
+                                                                updateItem(values.items, push, updatedItem)
+                                                            }
+                                                            removeItem={() => remove(modalItemIndex)}
+                                                        />
+
+                                                        {values.items.map((item, index) => (
+                                                            <tr
+                                                                key={item.id}
                                                                 className='click'
-                                                                onClick={e => {
-                                                                    remove(index);
-                                                                    e.stopPropagation();
-                                                                }}
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {values.items.length === 0 && (
-                                                    <tr>
-                                                        <td height='200px' colSpan='4' valign='center' align='center'>
-                                                            <div
-                                                                className='click no-items'
-                                                                onClick={() => openItemModal()}>
-                                                                Tap to add an item...
-                                                            </div>
-                                                        </td>
-                                                    </tr>
+                                                                onClick={() => openItemModal(index)}>
+                                                                <td>{item.name}</td>
+                                                                <td>{item.quantity}</td>
+                                                                <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
+                                                                <td className='button-col'>
+                                                                    <FiTrash
+                                                                        className='click'
+                                                                        onClick={e => {
+                                                                            remove(index);
+                                                                            e.stopPropagation();
+                                                                        }}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                        {values.items.length === 0 && (
+                                                            <tr>
+                                                                <td
+                                                                    height='200px'
+                                                                    colSpan='4'
+                                                                    valign='center'
+                                                                    align='center'>
+                                                                    <div
+                                                                        className='click no-items'
+                                                                        onClick={() => openItemModal()}>
+                                                                        Tap to add an item...
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </>
                                                 )}
-                                            </>
-                                        )}
-                                    </FieldArray>
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th scope='col'>Subtotal</th>
-                                        <td></td>
-                                        <td>{displaySubtotal(values)}</td>
-                                        <td className='button-col'></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                            </FieldArray>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <th scope='col'>Subtotal</th>
+                                                <td></td>
+                                                <td>{displaySubtotal(values)}</td>
+                                                <td className='button-col'></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
 
-                            <PercentageAmountSelector name='tax' label='Tax' />
-                            <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
-                        </Show>
+                                    <PercentageAmountSelector name='tax' label='Tax' />
+                                    <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
+                                </Show>
+                            </AccordionItem>
 
-                        <LabelInput
-                            as='textarea'
-                            rows='4'
-                            type='text'
-                            name='notes'
-                            label='Notes'
-                            placeholder='Tell others more about this expense!'
-                        />
+                            <AccordionItem name='other' label='Other'>
+                                <LabelInput
+                                    as='textarea'
+                                    rows='4'
+                                    type='text'
+                                    name='notes'
+                                    label='Notes'
+                                    placeholder='Tell others more about this expense!'
+                                />
 
-                        <ImageGallery form name='images' />
+                                <ImageGallery form name='images' />
+                            </AccordionItem>
+                        </Accordion>
 
                         <Show when={SHOW_EXPENSE_JSON}>
                             <b>

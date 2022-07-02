@@ -1,5 +1,5 @@
 import { useFormikContext } from 'formik';
-import { createContext, useContext, useEffect, useId, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useId, useReducer, useState } from 'react';
 import './Accordion.scss';
 import Show from './Show';
 
@@ -13,54 +13,87 @@ function AccordionHeader({ label, expanded, ...props }) {
     );
 }
 
-export function Accordion({ layout = {}, children }) {
+export function Accordion({ children }) {
     const [current, setCurrent] = useState(null);
+    const [layout, setLayout] = useState(new Map());
 
-    function toggle(id) {
-        if (current === id) setCurrent(null);
-        else setCurrent(id);
-    }
+    const toggle = useCallback((id, open) => {
+        setCurrent(current => {
+            if (open !== undefined) {
+                if (current !== id && open) return id;
+                if (current === id && !open) return null;
+                return current;
+            }
+
+            // `open` not passed as an argument: toggle accordion
+            if (current === id) return null;
+            return id;
+        });
+    }, []);
+
+    const toggleName = useCallback(
+        (name, open) => {
+            if (!layout.has(name)) return;
+            toggle(layout.get(name).id, open);
+        },
+        [layout, toggle]
+    );
+
+    const register = useCallback((name, id, fields = []) => {
+        setLayout(current => {
+            current.set(name, {
+                id,
+                fields,
+            });
+            return current;
+        });
+    }, []);
+
+    const unregister = useCallback(name => {
+        setLayout(current => {
+            current.delete(name);
+            return current;
+        });
+    }, []);
 
     const context = Object.freeze({
-        layout,
+        register,
+        unregister,
         toggle,
+        toggleName,
         current,
+        layout,
     });
 
     return <AccordionContext.Provider value={context}>{children}</AccordionContext.Provider>;
 }
 
-export function AccordionItem({ name, label, open = false, children }) {
-    const { toggle, current, layout } = useContext(AccordionContext);
+export function AccordionItem({ name, label, open = false, fields = [], children }) {
+    const { toggle, current, layout, register, unregister } = useContext(AccordionContext);
     const [uuid] = useState(useId());
     const expanded = uuid === current;
 
-    // If open is true, expand this accordion on mount
-    const [triedOpenOnMount, setTriedOpenOnMount] = useState(false);
+    const [mounted, onMounted] = useReducer(() => true, false);
     useEffect(() => {
-        if (!triedOpenOnMount && open) toggle(uuid);
-        setTriedOpenOnMount(true);
-    }, [open, toggle, uuid, triedOpenOnMount]);
+        // Ensure on mount logic only occures once
+        if (mounted) return;
+        onMounted();
+
+        // Register this accordion
+        register(name, uuid, fields);
+
+        // if `open` prop was passed `true`, open this accordion item by default
+        if (open) toggle(uuid, true);
+    }, [mounted, open, toggle, uuid, fields, name, register]);
+    useEffect(() => () => unregister(name), [unregister, name]);
 
     // Listen for formik submit and expand on error
     const formik = useFormikContext();
-    let isSubmitting = formik ? formik.isSubmitting : false;
     useEffect(() => {
-        if (!formik || !isSubmitting) return;
-        
-        function getLayoutIndexFromFieldName(field) {
-            for (let i = 0; i < layout.length; i++) {
-                if (layout[i][1].includes(field)) return i;
-            }
-            return -1;
-        }
-
-        const accordionIndices = Object.keys(formik.errors).map(getLayoutIndexFromFieldName).filter(e => e >= 0);
-        if (accordionIndices.length === 0) return;
-        const minIndex = Math.min.apply(null, accordionIndices);
-        if (layout[minIndex][0] === name && !expanded) toggle(uuid);
-
-    }, [isSubmitting, formik, expanded, layout, name, toggle, uuid]);
+        if (!formik || !formik.isSubmitting) return;
+        const [[accordionName] = ['']] = Array.from(layout).filter(([name, info]) => info.fields.some(field => field in formik.errors));
+        if (accordionName === name) toggle(uuid, true);
+    }, [formik, expanded, layout, name, toggle, uuid]);
 
     return (
         <div className='accordion-item'>
@@ -68,4 +101,9 @@ export function AccordionItem({ name, label, open = false, children }) {
             <Show when={expanded}>{children}</Show>
         </div>
     );
+}
+
+export function AccordionLink({ to, children }) {
+    const { toggleName } = useContext(AccordionContext);
+    return <span className='accordion-link click' onClick={() => toggleName(to)}>{children}</span>;
 }

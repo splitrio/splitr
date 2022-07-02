@@ -21,7 +21,7 @@ import ImageGallery from '../../../components/ImageGallery';
 
 import { Storage } from 'aws-amplify';
 import { v4 as uuid } from 'uuid';
-import { Accordion, AccordionItem } from '../../../components/Accordion';
+import { Accordion, AccordionItem, AccordionLink } from '../../../components/Accordion';
 
 const SHOW_EXPENSE_JSON = false;
 const SHOW_EXPENSE_JSON_CASTED = false;
@@ -100,11 +100,18 @@ function EditExpenseView({ users }) {
             case 'proportionally':
                 return 'Expense will be split up by salary';
             case 'equally':
-                return 'Expense will be split equally';
+                return 'Expense will be split up equally';
             case 'individually':
                 return "You'll pay for this expense yourself";
             default:
-                return '';
+                return (
+                    <small>
+                        Expense will be split up according to{' '}
+                        <strong>
+                            <AccordionLink to='custom'>Custom Split</AccordionLink>
+                        </strong>
+                    </small>
+                );
         }
     }
 
@@ -213,28 +220,25 @@ function EditExpenseView({ users }) {
                 }}>
                 {({ values, errors, isSubmitting }) => (
                     <Form noValidate>
-                        <Accordion layout={[
-                            ['basic', ['name', 'date', 'split', 'users']],
-                            ['cost', ['type', 'amount', 'items', 'tax', 'tip']],
-                            ['other', ['notes', 'images']]
-                        ]}>
-                            <AccordionItem name='basic' label='Basic' open>
+                        <Accordion>
+                            <AccordionItem name='basic' label='Basic' fields={['name', 'date', 'split', 'users']} open>
                                 <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />
                                 <LabelInput type='date' name='date' label='Date' />
                                 <LabelInput
                                     as='select'
                                     name='split'
                                     label='Split'
-                                    tooltip={<small>{getSplitTooltip(values.split)}</small>}>
+                                    tooltip={getSplitTooltip(values.split)}>
                                     <option value='proportionally'>Proportionally</option>
                                     <option value='equally'>Equally</option>
                                     <option value='individually'>Individually</option>
+                                    {/* <option value='custom'>Custom</option> */}
                                 </LabelInput>
                                 <Show when={values.split !== 'individually'}>
                                     <LabelInput
                                         as='select'
                                         name='users'
-                                        label="Who's Paying"
+                                        label='Split Among'
                                         placeholder='Everyone'
                                         multiple
                                         renderLabel={renderUsersLabel}>
@@ -247,13 +251,13 @@ function EditExpenseView({ users }) {
                                 </Show>
                             </AccordionItem>
 
-                            {/* <Show when={values.split === 'equally'}>
-                                <AccordionItem label='Weights'>
+                            {/* <Show when={values.split === 'custom'}>
+                                <AccordionItem name='custom' label='Custom Split'>
                                     <p>split weights</p>
                                 </AccordionItem>
                             </Show> */}
 
-                            <AccordionItem name='cost' label='Cost'>
+                            <AccordionItem name='cost' label='Cost' fields={['type', 'amount', 'items', 'tax', 'tip']}>
                                 <LabelInput as='select' name='type' label='Expense Type'>
                                     <option value='single'>Lump Sum</option>
                                     <option value='multiple'>Multiple Items</option>
@@ -353,7 +357,7 @@ function EditExpenseView({ users }) {
                                 </Show>
                             </AccordionItem>
 
-                            <AccordionItem name='other' label='Other'>
+                            <AccordionItem name='other' label='Other' fields={['notes', 'images']}>
                                 <LabelInput
                                     as='textarea'
                                     rows='4'
@@ -367,19 +371,23 @@ function EditExpenseView({ users }) {
                             </AccordionItem>
                         </Accordion>
 
-                        <Show when={SHOW_EXPENSE_JSON}>
-                            <b>
-                                <code>Expense JSON</code>
-                            </b>
-                            <pre>{JSON.stringify(values, null, 2)}</pre>
-                        </Show>
+                        {SHOW_EXPENSE_JSON && (
+                            <>
+                                <b>
+                                    <code>Expense JSON</code>
+                                </b>
+                                <pre>{JSON.stringify(values, null, 2)}</pre>
+                            </>
+                        )}
 
-                        <Show when={SHOW_EXPENSE_JSON_CASTED && ExpenseSchema.isValidSync(values)}>
-                            <b>
-                                <code>Casted Expense JSON</code>
-                            </b>
-                            <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre>
-                        </Show>
+                        {SHOW_EXPENSE_JSON_CASTED && ExpenseSchema.isValidSync(values) && (
+                            <>
+                                <b>
+                                    <code>Casted Expense JSON</code>
+                                </b>
+                                <pre>{JSON.stringify(ExpenseSchema.cast(values), null, 2)}</pre>
+                            </>
+                        )}
 
                         <button
                             className='contrast'

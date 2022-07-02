@@ -35,7 +35,7 @@ const EndOfDay = () => {
 
 const ExpenseSchema = object({
     name: NameSchema,
-    date: date().max(EndOfDay(), "Expenses can't be in the future!"),
+    date: date().max(EndOfDay(), "Expenses can't be in the future!").required('Required!'),
     amount: CurrencySchema.when('type',
         {
             is: 'single',

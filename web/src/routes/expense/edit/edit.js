@@ -89,6 +89,10 @@ function useExistingExpense(users) {
         let expense = state?.expense;
         if (!expense) return expense;
         expense = defaultsDeep(cloneDeep(expense), DefaultExpense());
+        expense.weights = expense.users.map(user => ({
+            user: user.user,
+            weight: user.weight || 1
+        }));
         expense.users = expense.users.map(user => user.user);
         return expense;
     }

@@ -1,5 +1,5 @@
-import { FiPlusCircle, FiTrash } from 'react-icons/fi';
-import { Formik, Form, FieldArray } from 'formik';
+import { FiPlusCircle, FiTrash, FiEdit3 } from 'react-icons/fi';
+import { Formik, Form, FieldArray, useFormikContext } from 'formik';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -7,7 +7,7 @@ import Page from '../../../components/Page';
 import Show from '../../../components/Show';
 import ItemModal from './ItemModal';
 import CloseHeader from '../../../components/CloseHeader';
-import { DefaultExpense, ExpenseSchema } from './schema';
+import { DefaultExpense, DefaultWeight, ExpenseSchema } from './schema';
 import LabelInput from '../../../components/form/LabelInput';
 import PercentageAmountSelector from '../../../components/form/PercentageAmountSelector';
 
@@ -22,6 +22,8 @@ import ImageGallery from '../../../components/ImageGallery';
 import { Storage } from 'aws-amplify';
 import { v4 as uuid } from 'uuid';
 import { Accordion, AccordionItem, AccordionLink } from '../../../components/Accordion';
+import useDeepCompareEffect from 'use-deep-compare-effect';
+import WeightModal from './WeightModal';
 
 const SHOW_EXPENSE_JSON = false;
 const SHOW_EXPENSE_JSON_CASTED = false;
@@ -92,6 +94,102 @@ function useExistingExpense(users) {
     }
     const [cleaned] = useState(cleanExpense());
     return cleaned;
+}
+
+function WeightsDetail({ expense, users }) {
+    const { setFieldValue } = useFormikContext();
+
+    // Each time expense.users changes, update expense.weights non-destructively
+    useDeepCompareEffect(() => {
+        const userIds = expense.users.length === 0 ? users.map(user => user.user) : expense.users;
+        let updated = false;
+
+        // Ensure that each weight in expense.weights has a user, removing if needed
+        const numWeights = expense.weights.length;
+        expense.weights = expense.weights.filter(weightInfo => userIds.some(user => weightInfo.user === user));
+        if (expense.weights.length !== numWeights) updated = true;
+
+        // Check that each user in expense.users has a weight, adding if needed
+        for (const user of userIds) {
+            if (!expense.weights.find(weightInfo => weightInfo.user === user)) {
+                expense.weights.push(DefaultWeight(user));
+                updated = true;
+            }
+        }
+
+        if (updated) setFieldValue('weights', expense.weights);
+    }, [expense.users]);
+
+    const [modalState, setModalState] = useState(WeightModal.States.Closed);
+    const [selectedUserInfo, setSelectedUserInfo] = useState();
+    const [selectedWeight, setSelectedWeight] = useState();
+
+    function openModal(userInfo, weightInfo) {
+        setSelectedUserInfo(userInfo);
+        setSelectedWeight(weightInfo);
+        setModalState(WeightModal.States.Open);
+    }
+
+    function closeModal() {
+        setModalState(WeightModal.States.Closed);
+    }
+
+    function Weight({ weight, total }) {
+        const userInfo = users.find(info => info.user === weight.user);
+        return (
+            <tr className='click' onClick={() => openModal(userInfo, weight)}>
+                <td>{`${userInfo.firstName} ${userInfo.lastName}`}</td>
+                <td>{weight.weight}</td>
+                <td>{`${parseFloat(((100.0 * weight.weight) / total).toFixed(2))}%`}</td>
+                <td className='button-col'>
+                    <FiEdit3 />
+                </td>
+            </tr>
+        );
+    }
+
+    const totalWeights = expense.weights.reduce((total, weight) => total + weight.weight, 0);
+
+    return (
+        <table role='grid'>
+            <thead>
+                <tr>
+                    <th scope='col'>Name</th>
+                    <th scope='col'>Weight</th>
+                    <th scope='col'>Proportion</th>
+                    <th scope='col' className='button-col'></th>
+                </tr>
+            </thead>
+            <tbody>
+                <WeightModal
+                    state={modalState}
+                    onClose={closeModal}
+                    userInfo={selectedUserInfo}
+                    weight={selectedWeight}
+                    onWeightChanged={updatedWeight => {
+                        const weightIndex = expense.weights.findIndex(
+                            weightInfo => weightInfo.user === updatedWeight.user
+                        );
+                        expense.weights[weightIndex] = updatedWeight;
+                        setFieldValue('weights', expense.weights);
+                    }}
+                />
+                {expense.weights.map((weight, index) => (
+                    <Weight key={weight.user} weight={weight} total={totalWeights} />
+                ))}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>
+                        <strong>Total</strong>
+                    </td>
+                    <td>{totalWeights}</td>
+                    <td>100%</td>
+                    <td className='button-col'></td>
+                </tr>
+            </tfoot>
+        </table>
+    );
 }
 
 function EditExpenseView({ users }) {
@@ -205,15 +303,36 @@ function EditExpenseView({ users }) {
 
                         // Assemble user objects to send with the request
                         // If no users selected, add all users to this expense
-                        if (sanitized.users.length === 0) sanitized.users = users.map(user => ({ id: user.user }));
-                        else sanitized.users = sanitized.users.map(user => ({ id: user }));
+                        if (sanitized.users.length === 0)
+                            sanitized.users = users.map(user => ({
+                                user: user.user,
+                            }));
+                        else
+                            sanitized.users = sanitized.users.map(user => ({
+                                user: user,
+                            }));
+
+                        // If custom weights are being sent, update user objects
+                        // with weight info
+                        if (sanitized.split === 'custom') {
+                            for (const user of sanitized.users) {
+                                user.weight = sanitized.weights.find(info => info.user === user.user).weight;
+                            }
+                        }
+
+                        // Don't need to send expense.weights to server
+                        if (sanitized.weights) delete sanitized.weights;
 
                         // alert(JSON.stringify(sanitized, null, 2));
 
                         if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
-                        else await auth.api.post('/expenses', { body: sanitized });
+                        else
+                            await auth.api.post('/expenses', {
+                                body: sanitized,
+                            });
                         navigate(-1);
                     } catch (e) {
+                        console.error(e);
                         toast.error(`Failed to ${isEditing ? 'save' : 'submit'} expense. Try again later.`);
                         setSubmitting(false);
                     }
@@ -232,7 +351,7 @@ function EditExpenseView({ users }) {
                                     <option value='proportionally'>Proportionally</option>
                                     <option value='equally'>Equally</option>
                                     <option value='individually'>Individually</option>
-                                    {/* <option value='custom'>Custom</option> */}
+                                    <option value='custom'>Custom</option>
                                 </LabelInput>
                                 <Show when={values.split !== 'individually'}>
                                     <LabelInput
@@ -251,11 +370,11 @@ function EditExpenseView({ users }) {
                                 </Show>
                             </AccordionItem>
 
-                            {/* <Show when={values.split === 'custom'}>
+                            <Show when={values.split === 'custom'}>
                                 <AccordionItem name='custom' label='Custom Split'>
-                                    <p>split weights</p>
+                                    <WeightsDetail expense={values} users={users} />
                                 </AccordionItem>
-                            </Show> */}
+                            </Show>
 
                             <AccordionItem name='cost' label='Cost' fields={['type', 'amount', 'items', 'tax', 'tip']}>
                                 <LabelInput as='select' name='type' label='Expense Type'>

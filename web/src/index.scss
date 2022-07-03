@@ -266,3 +266,22 @@ svg:not(:root) {
         transform: translate(0, 30px);
     }
 }
+
+/**
+ * Tables: style last column to be text justified right
+ */
+table {
+    thead, tbody, tfoot {
+        tr {
+            td, th {
+                &:last-child {
+                    text-align: right;
+                }
+            }
+        }
+    }
+
+    tfoot {
+        --font-size: 0.875em;
+    }
+}

@@ -28,8 +28,8 @@ export default function ItemModal({ state, editState, item, onClose, updateItem,
                 onSubmit={submit}>
                 <Form noValidate>
                     <LabelInput type='text' name='name' label='Name' placeholder='e.g. Banana, Desk, Camping Gear' />
-                    <LabelInput type='string' name='quantity' label='Quantity' inputMode='numeric' pattern='[0-9]*' />
-                    <LabelInput type='string' name='price' label='Price' inputMode='decimal' pattern='[0-9.]*' />
+                    <LabelInput type='text' name='quantity' label='Quantity' inputMode='numeric' pattern='[0-9]*' />
+                    <LabelInput type='text' name='price' label='Price' inputMode='decimal' pattern='[0-9.]*' />
                     <div className='grid' style={{ marginTop: '30px' }}>
                         <button type='submit' className='contrast'>
                             <FiCheck className='icon' />

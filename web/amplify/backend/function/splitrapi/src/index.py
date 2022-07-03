@@ -144,6 +144,10 @@ def resolve_expense_contribution(
         my_wage = next(user["wage"] for user in expense["users"] if user["user"] == user_id)
         total_wages = sum(user["wage"] for user in expense["users"])
         return (my_wage / total_wages) * total
+    elif expense["split"] == "custom":
+        my_weight = next(user["weight"] for user in expense["users"] if user["user"] == user_id)
+        total_weights = sum(user["weight"] for user in expense["users"])
+        return (my_weight / total_weights) * total
     else:
         raise Exception(f'Invalid expense split method: {expense["split"]}')
 
@@ -236,10 +240,17 @@ def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any])
         # users array contains the users that should be added to the expense
         if not data["users"]: raise BadRequest("Non-individual expenses must have at least one user")
 
-        user_infos = resolve_user_infos(info["id"] for info in data["users"])
+        user_infos = resolve_user_infos(info["user"] for info in data["users"])
         user_ids = set(user_infos.keys())
         new_user_statuses = [models.UserStatus(user=id, paid=(id==user_id), wage=info["wage"]) for id, info in user_infos.items()]
 
+        # user provided custom weights: add these to the user statuses
+        if expense.split == "custom":
+            for user_status in new_user_statuses:
+                # Find the user with this id in the expense data
+                user_info = next(info for info in data["users"] if info["user"] == user_status.user)
+                if "weight" not in user_info: raise BadRequest(f'Weight missing for user {user_info["user"]} in expense with custom split')
+                user_status.weight = user_info["weight"]
 
     # Ensure that the owning user gets an ExpenseUserModel dedicated to them,
     # regardless of whether or not they were in the `expense["users"]` array passed by the client

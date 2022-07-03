@@ -68,16 +68,21 @@ _ExpenseSchemaBase = {
     },
     'split': {
         'type': 'string',
-        'allowed': ['proportionally', 'equally', 'individually']
+        'allowed': ['proportionally', 'equally', 'individually', 'custom']
     },
     'users': {
         'type': 'list',
         'schema': {
             'type': 'dict',
             'schema': {
-                'id': {
+                'user': {
                     'type': 'string',
                     'empty': False
+                },
+                'weight': {
+                    'type': 'float',
+                    'required': False,
+                    'noneof': [{'max': 0}],  # positive
                 }
             }
         }
@@ -95,7 +100,6 @@ _ExpenseSchemaBase = {
         'schema': {
             'type': 'string'
         },
-        'nullable': True
     }
 }
 """

@@ -59,12 +59,13 @@ class Item(MapAttribute):
 
 class UserStatus(MapAttribute):
     """
-    Represents information about whether or not a user has payed for an expense.
+    Represents information about whether or not a user has paid for an expense.
     """
     user = UnicodeAttribute()
     paid = BooleanAttribute()
     paid_time = UTCDateTimeAttribute(null=True)
     wage = NumberAttribute()
+    weight = NumberAttribute()
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """

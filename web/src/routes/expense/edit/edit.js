@@ -24,6 +24,10 @@ import { v4 as uuid } from 'uuid';
 import { Accordion, AccordionItem, AccordionLink } from '../../../components/Accordion';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import WeightModal from './WeightModal';
+import WindowProgress from '../../../components/WindowProgress';
+
+// Proportion of progress bar that is completed by default when submitting/editing an expense
+const PROGRESS_INITIAL_COMPLETION = 0.07;
 
 const SHOW_EXPENSE_JSON = false;
 const SHOW_EXPENSE_JSON_CASTED = false;
@@ -266,6 +270,8 @@ function EditExpenseView({ users }) {
     const existingExpense = useExistingExpense(users);
     const isEditing = !!existingExpense;
 
+    const [progress, setProgress] = useState({ value: 0, max: 100 });
+
     return (
         <>
             <CloseHeader>
@@ -285,25 +291,66 @@ function EditExpenseView({ users }) {
                     try {
                         const sanitized = ExpenseSchema.cast(values);
 
-                        // Upload all outstanding images
-                        const identityId = (await auth.credentials()).identityId;
+                        /**
+                         * Updates the progress bar UI according to the current progress components
+                         * @param {*} components Progress components containing information about completion state
+                         */
+                        function updateProgress(components) {
+                            // Each progress component counts towards the same width of the progress bar
+                            setProgress({
+                                value:
+                                    PROGRESS_INITIAL_COMPLETION +
+                                    (1 - PROGRESS_INITIAL_COMPLETION) *
+                                        components.reduce((t, e) => t + e.value / (e.max * components.length), 0),
+                                max: 1,
+                            });
+                        }
+
+                        // Compile all progress components for the progress bar
+                        const progressComponents = [
+                            {
+                                type: 'expense',
+                                value: 0,
+                                max: 1,
+                            },
+                        ];
+
                         for (let i = 0; i < sanitized.images.length; i++) {
                             const image = sanitized.images[i];
                             if (!image.startsWith('blob')) continue;
-
-                            // S3 Image keys are of the form [IDENTITY_ID]![UUID]
-                            // to allow other clients to find the owning identity id easily
-                            const key = `${identityId}!${uuid()}`;
-
-                            // TODO: BAD. Creates duplicate copy of image in memory
-                            const blob = await fetch(image).then(r => r.blob());
-                            const result = await Storage.put(key, blob, {
-                                level: 'protected',
-                                contentType: blob.type,
+                            progressComponents.push({
+                                type: 'image',
+                                value: 0,
+                                max: 1,
+                                url: image,
+                                index: i,
                             });
-
-                            sanitized.images[i] = result.key;
                         }
+
+                        updateProgress(progressComponents);
+
+                        // Upload outstanding images in parallel
+                        const identityId = (await auth.credentials()).identityId;
+                        await Promise.all(
+                            progressComponents
+                                .filter(c => c.type === 'image')
+                                .map(async upload => {
+                                    // S3 image keys for splitr expenses are of the form [IDENTITY_ID]![UUID]
+                                    // to allow other clients to find the owning identity id easily
+                                    const s3Key = `${identityId}!${uuid()}`;
+                                    const blob = await fetch(upload.url).then(r => r.blob());
+                                    const result = await Storage.put(s3Key, blob, {
+                                        level: 'protected',
+                                        contentType: blob.type,
+                                        progressCallback(progress) {
+                                            upload.value = progress.loaded;
+                                            upload.max = progress.total;
+                                            updateProgress(progressComponents);
+                                        },
+                                    });
+                                    sanitized.images[upload.index] = result.key;
+                                })
+                        );
 
                         // Assemble user objects to send with the request
                         // If no users selected, add all users to this expense
@@ -330,6 +377,12 @@ function EditExpenseView({ users }) {
                         // alert(JSON.stringify(sanitized, null, 2));
                         // return;
 
+                        // Send expense to server and mock progress
+                        setProgress({
+                            value: 1,
+                            max: 1
+                        });
+
                         if (isEditing) {
                             await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
                             navigate(-1);
@@ -337,7 +390,7 @@ function EditExpenseView({ users }) {
                             const response = await auth.api.post('/expenses', {
                                 body: sanitized,
                             });
-                            navigate(`/expense/${response.id}`, {replace: true});
+                            navigate(`/expense/${response.id}`, { replace: true });
                         }
                     } catch (e) {
                         console.error(e);
@@ -347,6 +400,7 @@ function EditExpenseView({ users }) {
                 }}>
                 {({ values, errors, isSubmitting }) => (
                     <Form noValidate>
+                        <WindowProgress visible={isSubmitting} value={progress.value} max={progress.max} />
                         <Accordion>
                             <AccordionItem name='basic' label='Basic' fields={['name', 'date', 'split', 'users']} open>
                                 <LabelInput type='text' name='name' label='Name' placeholder='e.g. Groceries, Rent' />

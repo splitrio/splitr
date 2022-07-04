@@ -1,0 +1,15 @@
+.window-progress {
+    z-index: 15000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: opacity var(--transition);
+
+    .window-progress-bar {
+        background-color: var(--progress-color);
+        height: 100%;
+        transition: width 0.6s ease-in-out;
+    }
+}

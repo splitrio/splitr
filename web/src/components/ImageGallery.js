@@ -9,7 +9,7 @@ import get from 'lodash/get';
 
 import { Storage } from 'aws-amplify';
 
-function Image({ src, keys, open }) {
+function Image({ src, keys, open, disabled }) {
     const [url, setUrl] = useState(src);
 
     // If keys is true, we need to resolve each src prop
@@ -35,23 +35,26 @@ function Image({ src, keys, open }) {
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            className='image-container click'
-            onClick={() => open(url)}>
+            className={`image-container ${!disabled ? 'click' : ''}`}
+            onClick={() => {
+                if (!disabled) open(url)
+            }}>
             <img src={url} alt='' />
         </motion.div>
     );
 }
 
-function AddImageButton({ addImage }) {
+function AddImageButton({ addImage, disabled }) {
     const fileInput = useRef();
     return (
         <div
             className='image-container'
             onClick={() => {
+                if (disabled) return;
                 if (!fileInput.current) return;
                 fileInput.current.click();
             }}>
-            <div className='add-image-button click'>
+            <div className={`add-image-button ${!disabled ? 'click' : ''}`} disabled={disabled}>
                 <RiImageAddFill />
                 <input
                     type='file'
@@ -136,17 +139,28 @@ export default function ImageGallery({ images, form = false, keys = true, name, 
     };
 
     const actualImages = getImages();
+    const disabled = formik?.isSubmitting;
 
     return (
         <div className='form-group'>
-            {form && actualImages.length === 0 && <label htmlFor={name}>{label}</label>}
+            {form && actualImages.length === 0 && (
+                <label htmlFor={name} disabled={disabled}>
+                    {label}
+                </label>
+            )}
             <div className='image-gallery'>
                 <AnimatePresence>
                     {actualImages.map((image, index) => (
-                        <Image key={image} keys={keys} src={image} open={src => setSelected([index, src])} />
+                        <Image
+                            key={image}
+                            keys={keys}
+                            src={image}
+                            open={src => setSelected([index, src])}
+                            disabled={disabled}
+                        />
                     ))}
                 </AnimatePresence>
-                {form && <AddImageButton addImage={addImage} />}
+                {form && <AddImageButton addImage={addImage} disabled={disabled} />}
                 <AnimatePresence>
                     {selected !== null && (
                         <Lightbox

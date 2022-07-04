@@ -120,6 +120,18 @@ dialog>article {
         padding: 0 5px;
         background: linear-gradient(180deg, transparent 45%, var(--background-color) 50%);
         color: var(--color);
+        transition: color 0.3s ease-in-out;
+
+        &[disabled] {
+            background: none;
+            color: var(--form-element-placeholder-color);
+        }
+    }
+}
+
+input, select, textarea {
+    &[disabled] {
+        border-color: transparent;
     }
 }
 
@@ -197,6 +209,12 @@ ul.rtf {
         &:focus {
             --border-color: var(--form-element-active-border-color);
         }
+    }
+
+    .rrs__button--disabled {
+        background-color: var(--form-element-disabled-background-color);
+        border-color: transparent;
+        opacity: var(--form-element-disabled-opacity);
     }
 
     .rrs__options {

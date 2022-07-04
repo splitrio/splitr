@@ -328,6 +328,7 @@ function EditExpenseView({ users }) {
                         if (sanitized.weights) delete sanitized.weights;
 
                         // alert(JSON.stringify(sanitized, null, 2));
+                        // return;
 
                         if (isEditing) {
                             await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });

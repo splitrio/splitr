@@ -37,7 +37,7 @@ export default function LabelInput({
     children,
     ...props
 }) {
-    const { values, errors, touched, handleChange, handleBlur } = useFormikContext();
+    const { values, errors, touched, handleChange, handleBlur, isSubmitting } = useFormikContext();
     const error = getError(errors);
     const lastError = useLast(error);
     const touch = getTouched(touched);
@@ -91,7 +91,7 @@ export default function LabelInput({
 
     return (
         <div className='form-group'>
-            <label htmlFor={name} className={hasError ? 'error-color' : ''}>
+            <label htmlFor={name} className={hasError ? 'error-color' : ''} disabled={isSubmitting}>
                 {label}
             </label>
             <div onFocus={onFocus} onBlur={onBlur}>
@@ -106,9 +106,11 @@ export default function LabelInput({
                         onBlur={({ value }) => handleBlur({ target: { value, name } })}
                         selectedValues={get(values, name)}
                         customLabelRenderer={props.renderLabel}
+                        disabled={isSubmitting}
+                        key={isSubmitting} // Weird glitch (https://github.com/benbowes/react-responsive-select/issues/168)
                     />
                 ) : (
-                    <Field name={name} aria-invalid={hasError ? true : ''} {...props}>
+                    <Field name={name} aria-invalid={hasError ? true : ''} disabled={isSubmitting} {...props}>
                         {children}
                     </Field>
                 )}

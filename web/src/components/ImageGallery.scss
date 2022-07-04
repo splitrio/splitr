@@ -28,6 +28,12 @@ $min-lightbox-width: 300px;
             color: var(--form-element-color);
         }
     }
+
+    .add-image-button[disabled] {
+        background-color: var(--form-element-disabled-background-color);
+        border-color: transparent;
+        opacity: var(--form-element-disabled-opacity);
+    }
 }
 
 .lightbox {

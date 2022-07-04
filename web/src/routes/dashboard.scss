@@ -21,6 +21,7 @@
 
         &--selected {
             font-weight: normal;
+
             &:after {
                 content: "";
                 position: absolute;
@@ -62,6 +63,12 @@
     border-radius: 10px;
 }
 
-.empty-container > * {
+@media (prefers-color-scheme: light) {
+    .empty-container {
+        background-color: rgba(150, 150, 150, 0.05);
+    }
+}
+
+.empty-container>* {
     margin: 0 auto;
 }

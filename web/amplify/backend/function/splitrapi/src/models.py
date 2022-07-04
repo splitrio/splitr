@@ -65,7 +65,7 @@ class UserStatus(MapAttribute):
     paid = BooleanAttribute()
     paid_time = UTCDateTimeAttribute(null=True)
     wage = NumberAttribute()
-    weight = NumberAttribute()
+    weight = NumberAttribute(null=True)
 
 class ExpenseModel(BaseModel, discriminator='Expense'):
     """

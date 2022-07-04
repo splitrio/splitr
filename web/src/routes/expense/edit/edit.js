@@ -91,7 +91,7 @@ function useExistingExpense(users) {
         expense = defaultsDeep(cloneDeep(expense), DefaultExpense());
         expense.weights = expense.users.map(user => ({
             user: user.user,
-            weight: user.weight || 1
+            weight: user.weight || 1,
         }));
         expense.users = expense.users.map(user => user.user);
         return expense;
@@ -329,12 +329,15 @@ function EditExpenseView({ users }) {
 
                         // alert(JSON.stringify(sanitized, null, 2));
 
-                        if (isEditing) await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
-                        else
-                            await auth.api.post('/expenses', {
+                        if (isEditing) {
+                            await auth.api.put(`/expenses/${existingExpense.id}`, { body: sanitized });
+                            navigate(-1);
+                        } else {
+                            const response = await auth.api.post('/expenses', {
                                 body: sanitized,
                             });
-                        navigate(-1);
+                            navigate(`/expense/${response.id}`, {replace: true});
+                        }
                     } catch (e) {
                         console.error(e);
                         toast.error(`Failed to ${isEditing ? 'save' : 'submit'} expense. Try again later.`);

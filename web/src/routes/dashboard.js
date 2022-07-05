@@ -143,6 +143,7 @@ function DueExpenseGroup({ name, expenses }) {
             </table>
             <ConfirmPaymentModal
                 ownerName={name}
+                ownerId={selectedExpenses[0]?.owner}
                 contribution={selectedContribution}
                 expenses={selectedExpenses}
                 isOpen={confirmingPayment}

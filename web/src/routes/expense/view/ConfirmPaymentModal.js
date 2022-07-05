@@ -38,7 +38,7 @@ export default function ConfirmPaymentModal({ ownerName, ownerId, contribution, 
 
     function getVenmoDeeplink() {
         function getNote() {
-            if (expenses.length === 1) return expenses.name;
+            if (expenses.length === 1) return expenses[0].name;
             if (expenses.length === 2) return `${expenses[0].name} & ${expenses[1].name}`;
 
             let note = '';
@@ -84,9 +84,10 @@ export default function ConfirmPaymentModal({ ownerName, ownerId, contribution, 
                     </div>
                     <div className='grid' style={{ marginTop: '30px' }}>
                         {venmo && (
-                            <button className='contrast outline' onClick={() => window.open(getVenmoDeeplink(), '_blank')}>
-                                <IoLogoVenmo />
-                                Open Venmo
+                            <button
+                                className='contrast outline'
+                                onClick={() => window.open(getVenmoDeeplink(), '_blank')}>
+                                <IoLogoVenmo /> Open in Venmo
                             </button>
                         )}
                         <button

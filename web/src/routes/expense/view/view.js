@@ -248,8 +248,9 @@ function ExpenseFAB({ expense, relation }) {
                 isOpen={state === ViewState.ConfirmPayment}
                 onClose={closeModal}
                 ownerName={`${expense.ownerInfo.firstName} ${expense.ownerInfo.lastName}`}
+                ownerId={expense.owner}
                 contribution={expense.contribution}
-                expenseIds={[expense.id]}
+                expenses={[expense]}
             />
             <RescindPaymentModal expense={expense} onClose={closeModal} viewState={state} />
             <ConfirmDeleteModal expense={expense} onClose={closeModal} viewState={state} />

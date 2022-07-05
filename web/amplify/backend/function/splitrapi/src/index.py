@@ -74,6 +74,8 @@ def resolve_user_infos(user_ids: Optional[Iterable[str]] = None) -> Dict[str, Us
                 user_info["lastName"] = attr["Value"]
             elif attr["Name"] == "custom:hourlyWage":
                 user_info["wage"] = float(attr["Value"])
+            elif attr["Name"] == "custom:venmo":
+                user_info["venmo"] = attr["Value"]
         return user_info
 
     if user_ids is None:
@@ -286,6 +288,15 @@ def verify_expense_modification(expense: models.ExpenseModel, user_id: str):
     # Expenses can't be deleted if another user has paid
     if any(user.paid for user in expense.users if user.user != user_id):
         raise BadRequest("Can't delete/modify an expense with confirmed users.")
+
+
+@app.route('/users/<user_id>', methods=['GET'])
+def get_user(user_id):
+    try:
+        users = [{'user': id, **info} for id, info in resolve_user_infos([user_id]).items()]
+        return jsonify(users[0])
+    except cognito.exceptions.UserNotFoundException:
+        raise NotFound(f"No user with id '{user_id}' could be found.")
 
 
 @app.route('/users', methods=['GET'])

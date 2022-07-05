@@ -1,8 +1,11 @@
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
+import { IoLogoVenmo } from 'react-icons/io5';
 import useAuth from '../hooks/useAuth';
 import { motion } from 'framer-motion';
 import './Page.scss';
+import { useState } from 'react';
+import ConnectVenmo from './ConnectVenmo';
 
 const pageMotion = {
     initial: { opacity: 0, y: -50 },
@@ -23,6 +26,8 @@ export default function Page({ nav, children }) {
         }
     }
 
+    const [showVenmo, setShowVenmo] = useState(ConnectVenmo.States.Closed);
+
     return (
         <div id='pageContent'>
             <nav className='container-fluid'>
@@ -33,11 +38,14 @@ export default function Page({ nav, children }) {
                         </Link>
                     </li>
                 </ul>
-                {nav && (
-                    <ul>
-                        <li>{nav}</li>
-                    </ul>
-                )}
+                <ul>
+                    {nav && <li>{nav}</li>}
+                    {auth.user() && (
+                        <li className='click' onClick={() => setShowVenmo(ConnectVenmo.States.Open)}>
+                            <IoLogoVenmo />
+                        </li>
+                    )}
+                </ul>
             </nav>
 
             <motion.main
@@ -51,6 +59,8 @@ export default function Page({ nav, children }) {
                     <div id='page'>{children}</div>
                 </article>
             </motion.main>
+
+            <ConnectVenmo state={showVenmo} onClose={() => setShowVenmo(ConnectVenmo.States.Closed)} />
 
             <footer className='container-fluid'>
                 <small>

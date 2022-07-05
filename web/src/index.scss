@@ -82,6 +82,10 @@ dialog>article {
     cursor: pointer;
 }
 
+.hoverline:hover {
+    text-decoration: underline;
+}
+
 .link {
     @extend .click;
     @extend [role=link];

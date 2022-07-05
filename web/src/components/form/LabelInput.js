@@ -110,7 +110,7 @@ export default function LabelInput({
                         key={isSubmitting} // Weird glitch (https://github.com/benbowes/react-responsive-select/issues/168)
                     />
                 ) : (
-                    <Field name={name} aria-invalid={hasError ? true : ''} disabled={isSubmitting} {...props}>
+                    <Field name={name} disabled={isSubmitting} aria-invalid={hasError ? true : undefined} {...props}>
                         {children}
                     </Field>
                 )}

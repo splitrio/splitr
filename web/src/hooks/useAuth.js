@@ -130,6 +130,18 @@ function AuthProvider({ children }) {
             await Auth.forgotPasswordSubmit(username, code, newPassword);
         },
 
+        async updateAttributes(attributes) {
+            if (!authenticated) throw new Error('User was not signed in');
+            await Auth.updateUserAttributes(user, attributes);
+            setUser(await Auth.currentAuthenticatedUser());
+        },
+
+        async clearAttributes(attributes) {
+            if (!authenticated) throw new Error('User was not signed in');
+            await Auth.deleteUserAttributes(user, attributes);
+            setUser(await Auth.currentAuthenticatedUser());
+        },
+
         async signOut() {
             if (!authenticated) throw new Error('User was not signed in');
             await Auth.signOut();

@@ -144,7 +144,7 @@ function DueExpenseGroup({ name, expenses }) {
             <ConfirmPaymentModal
                 ownerName={name}
                 contribution={selectedContribution}
-                expenseIds={selectedExpenses.map(e => e.id)}
+                expenses={selectedExpenses}
                 isOpen={confirmingPayment}
                 onClose={() => setConfirmingPayment(false)}
             />

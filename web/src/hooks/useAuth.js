@@ -130,6 +130,10 @@ function AuthProvider({ children }) {
             await Auth.forgotPasswordSubmit(username, code, newPassword);
         },
 
+        async attributes() {
+            return (await Auth.currentUserInfo()).attributes;
+        },
+
         async updateAttributes(attributes) {
             if (!authenticated) throw new Error('User was not signed in');
             await Auth.updateUserAttributes(user, attributes);
@@ -153,7 +157,7 @@ function AuthProvider({ children }) {
             get: doApi(API.get),
             post: doApi(API.post),
             delete: doApi(API.del),
-            put: doApi(API.put)
+            put: doApi(API.put),
         }),
     });
 

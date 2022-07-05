@@ -33,20 +33,15 @@ export default function ConnectVenmo({ state, onClose }) {
     const [loading, setLoading] = useState(true);
     const [connected, setConnected] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
+    const [initUsername, setInitUsername] = useState('');
 
     const auth = useAuth();
 
-    function currentVenmo() {
-        const attributes = auth.user().attributes;
+    async function currentVenmo() {
+        const attributes = await auth.attributes();
         const key = 'custom:venmo';
         if (!(key in attributes)) return null;
         return attributes[key];
-    }
-
-    function initialUsername() {
-        const venmo = currentVenmo();
-        if (venmo) return `@${venmo}`;
-        return '';
     }
 
     async function disconnectVenmo() {
@@ -68,14 +63,19 @@ export default function ConnectVenmo({ state, onClose }) {
             onAfterOpen={async () => {
                 setLoading(true);
                 setDisconnecting(false);
-                setConnected(await venmoUserExists(currentVenmo()));
+
+                const venmo = await currentVenmo();
+                if (venmo) setInitUsername(`@${venmo}`);
+                else setInitUsername('');
+
+                setConnected(await venmoUserExists(venmo));
                 setLoading(false);
             }}>
             {loading ? (
                 <LoadingBlock height='200px' />
             ) : (
                 <Formik
-                    initialValues={{ username: initialUsername() }}
+                    initialValues={{ username: initUsername }}
                     validationSchema={VenmoSchema}
                     onSubmit={async ({ username }) => {
                         if (username.startsWith('@')) username = username.substring(1);

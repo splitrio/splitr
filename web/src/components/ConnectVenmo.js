@@ -17,12 +17,12 @@ const VenmoSchema = object({
 async function venmoUserExists(username) {
     if (!username) return false;
     try {
-        const response = await fetch(`https://account.venmo.com/u/${username}`);
+        const response = await fetch(`/api/venmo/${username}`);
         return response.ok;
     } catch (e) {
         console.error(e);
     }
-    return false;
+    return null;
 }
 
 const tooltipStyle = {

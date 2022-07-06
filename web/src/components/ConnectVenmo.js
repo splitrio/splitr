@@ -17,7 +17,7 @@ const VenmoSchema = object({
 async function venmoUserExists(username) {
     if (!username) return false;
     try {
-        const response = await fetch(`/api/venmo/${username}`);
+        const response = await fetch(`/api/venmo/${username}`, {method: 'head'});
         return response.ok;
     } catch (e) {
         console.error(e);

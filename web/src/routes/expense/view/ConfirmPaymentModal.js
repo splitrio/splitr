@@ -43,7 +43,7 @@ export default function ConfirmPaymentModal({ ownerName, ownerId, contribution, 
 
             let note = '';
             for (let i = 0; i < expenses.length - 1; i++) note += `${expenses[i].name}, `;
-            return `${note} & ${expenses[expenses.length - 1].name}`;
+            return `${note}& ${expenses[expenses.length - 1].name}`;
         }
 
         return `https://venmo.com/${encodeURIComponent(venmo)}?txn=pay&note=${encodeURIComponent(getNote())}&amount=${encodeURIComponent(formatCurrency(contribution))}`;

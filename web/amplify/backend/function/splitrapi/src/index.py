@@ -431,55 +431,53 @@ def confirm_or_rescind_expenses(confirm: bool, expense_ids: Iterable[str]) -> Re
     user_info = get_user_details()
     user_id = user_info["cognito:username"]
 
-    with TransactWrite(connection=connection) as write_transaction:
-        for expense_id in expense_ids:
-            # Get expense model and corresponding user model
-            # If this fails, either:
-            #   1) The expense doesn't exist
-            #   2) This user is not a part of this expense
-            #   3) The transaction failed due to concurrency
-            # @todo: find a way to distinguish between these states and communicate this to the client
-            pk = f"Expense#{expense_id}"
-            with TransactGet(connection=connection) as transaction:
-                expense_future = transaction.get(models.ExpenseModel, pk, pk)
-                user_future = transaction.get(
-                    models.ExpenseUserModel, pk, f"User#{user_id}"
-                )
-
-            expense: models.ExpenseModel = expense_future.get()
-            expense_user: models.ExpenseUserModel = user_future.get()
-
-            # Owners cannot confirm/rescind their own expenses
-            if expense.owner == user_id:
-                raise BadRequest(f'Cannot {"confirm" if confirm else "rescind"} own request')
-
-            # Update expense users to indicate that this user has or hasn't paid
-            all_were_paid = all(user.paid for user in expense.users)
-            for user in expense.users:
-                if user.user == user_id and user.paid != confirm:
-                    user.paid = confirm
-                    break
-            else:
-                raise BadRequest(
-                    f'Expense already {"confirmed" if confirm else "rescinded"}'
-                )
-            all_paid = all(user.paid for user in expense.users)
-
-            # If this confirmation/rescission will ultimately change whether or not all the users had confirmed,
-            # this will necessitate writing to the owner's own row
-            owner_needs_update = all_paid != all_were_paid
-            owner_expense_user: Optional[models.ExpenseUserModel] = None
-            if owner_needs_update:
-                with TransactGet(connection=connection) as transaction:
-                    owner_user_future = transaction.get(
-                        models.ExpenseUserModel, pk, f"User#{expense.owner}"
-                    )
-                owner_expense_user = owner_user_future.get()
-
-            user_index = next(
-                i for i in range(len(expense.users)) if expense.users[i].user == user_id
+    for expense_id in expense_ids:
+        # Get expense model and corresponding user model
+        # If this fails, either:
+        #   1) The expense doesn't exist
+        #   2) This user is not a part of this expense
+        #   3) The transaction failed due to concurrency
+        # @todo: find a way to distinguish between these states and communicate this to the client
+        pk = f"Expense#{expense_id}"
+        with TransactGet(connection=connection) as transaction:
+            expense_future = transaction.get(models.ExpenseModel, pk, pk)
+            user_future = transaction.get(
+                models.ExpenseUserModel, pk, f"User#{user_id}"
             )
 
+        expense: models.ExpenseModel = expense_future.get()
+        expense_user: models.ExpenseUserModel = user_future.get()
+
+        # Owners cannot confirm/rescind their own expenses
+        if expense.owner == user_id:
+            raise BadRequest(f'Cannot {"confirm" if confirm else "rescind"} own request')
+
+        # Update expense users to indicate that this user has or hasn't paid
+        all_were_paid = all(user.paid for user in expense.users)
+        for user in expense.users:
+            if user.user == user_id and user.paid != confirm:
+                user.paid = confirm
+                break
+        else:
+            raise BadRequest(
+                f'Expense already {"confirmed" if confirm else "rescinded"}'
+            )
+        all_paid = all(user.paid for user in expense.users)
+
+        # If this confirmation/rescission will ultimately change whether or not all the users had confirmed,
+        # this will necessitate writing to the owner's own row
+        owner_needs_update = all_paid != all_were_paid
+        owner_expense_user: Optional[models.ExpenseUserModel] = None
+        if owner_needs_update:
+            with TransactGet(connection=connection) as transaction:
+                owner_user_future = transaction.get(
+                    models.ExpenseUserModel, pk, f"User#{expense.owner}"
+                )
+            owner_expense_user = owner_user_future.get()
+
+        user_index = next(i for i in range(len(expense.users)) if expense.users[i].user == user_id)
+
+        with TransactWrite(connection=connection) as write_transaction:
             # Update expense model
             write_transaction.update(
                 expense,

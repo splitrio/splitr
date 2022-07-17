@@ -27,7 +27,9 @@ export default function ConfirmPaymentModal({ ownerName, ownerId, contribution, 
             await auth.api.post(`/expenses/confirm`, { body: expenses.map(e => e.id) });
             window.location.reload();
         } catch (e) {
-            toast.error(`Couldn't confirm payment: ${e.message}`);
+            if (expenses.length === 1)
+                toast.error(`Couldn't confirm payment: ${e.message}`);
+            else toast.error(`Some expenses didn't get confirmed. Please try again: ${e.message}`);
             console.log(JSON.stringify(e, null, 2));
             setSubmitting(false);
         }

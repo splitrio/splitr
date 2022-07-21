@@ -52,6 +52,7 @@ class Item(MapAttribute):
     name = UnicodeAttribute()
     quantity = NumberAttribute()
     price = NumberAttribute()
+    users = ListAttribute(of=UnicodeAttribute, null=True)
 
     @classmethod
     def new(cls, **attr: Any) -> 'Item':
@@ -84,7 +85,7 @@ class ExpenseModel(BaseModel, discriminator='Expense'):
     tax = PercentageAmount(null=True)
     tip = PercentageAmount(null=True)
     notes = UnicodeAttribute(null=True)
-    images = ListAttribute(of=UnicodeAttribute, null=True)
+    images = ListAttribute(of=UnicodeAttribute)
     version = VersionAttribute()
 
     @classmethod

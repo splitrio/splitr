@@ -25,6 +25,8 @@ import { Accordion, AccordionItem, AccordionLink } from '../../../components/Acc
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import WeightModal from './WeightModal';
 import WindowProgress from '../../../components/WindowProgress';
+import UserSelect from '../../../components/form/UserSelect';
+import { formatNumber, getBadge } from '../../../util/util';
 
 // Proportion of progress bar that is completed by default when submitting/editing an expense
 const PROGRESS_INITIAL_COMPLETION = 0.07;
@@ -147,8 +149,8 @@ function WeightsDetail({ expense, users }) {
         return (
             <tr className='click' onClick={() => openModal(userInfo, weight)}>
                 <td>{`${userInfo.firstName} ${userInfo.lastName}`}</td>
-                <td>{weight.weight}</td>
-                <td>{`${parseFloat(((100.0 * weight.weight) / total).toFixed(2))}%`}</td>
+                <td>{formatNumber(weight.weight)}</td>
+                <td>{`${formatNumber(100 * weight.weight / total)}%`}</td>
                 <td className='button-col'>
                     <FiEdit3 />
                 </td>
@@ -191,13 +193,169 @@ function WeightsDetail({ expense, users }) {
                     <td>
                         <strong>Total</strong>
                     </td>
-                    <td>{totalWeights}</td>
+                    <td>{formatNumber(totalWeights)}</td>
                     <td>100%</td>
                     <td className='button-col'></td>
                 </tr>
             </tfoot>
         </table>
     );
+}
+
+function ItemsDetail({ users }) {
+    const { values, setFieldValue } = useFormikContext();
+    const [modalItemIndex, setModalItemIndex] = useState(-1);
+    const [modalState, setModalState] = useState(ItemModal.States.Closed);
+
+    function updateItem(items, addItem, newItem) {
+        if (modalItemIndex >= 0) items[modalItemIndex] = newItem;
+        else {
+            newItem.id = nanoid();
+            addItem(newItem);
+        }
+    }
+
+    function openItemModal(edittingItemIndex = -1) {
+        setModalItemIndex(edittingItemIndex);
+        setModalState(ItemModal.States.Open);
+    }
+
+    function getUserIdsForItem(expense) {
+        let ids = expense.users;
+        if (ids.length === 0) ids = users.map(u => u.user);
+        return users.filter(u => ids.find(id => id === u.user));
+    }
+
+    function getItemBadges(item) {
+        const badges = [];
+        for (const userId of item.users) {
+            const user = users.find(u => u.user === userId);
+            badges.push(getBadge(`${user.firstName} ${user.lastName}`));
+        }
+        return badges;
+    }
+
+    useDeepCompareEffect(() => {
+        const userIds = values.users.length === 0 ? users.map(user => user.user) : values.users;
+        let updated = false;
+
+        for (const item of values.items) {
+            // If any item has users tied to it that are not part of the expense, remove them now
+            if (!item.users) continue;
+            for (let i = item.users.length - 1; i >= 0; i--) {
+                if (userIds.indexOf(item.users[i]) < 0) {
+                    item.users.splice(i, 1);
+                    updated = true;
+                }
+            }
+        }
+
+        if (updated) setFieldValue('items', values.items);
+    }, [values.users]);
+
+    const showBadges = values.split !== 'individually' && (values.users.length > 1 || values.users.length === 0);
+
+    return <>
+        <LabelInput as='select' name='type' label='Expense Type'>
+            <option value='single'>Single</option>
+            <option value='multiple'>Itemized</option>
+        </LabelInput>
+
+        <Show when={values.type === 'single'}>
+            <LabelInput
+                type='text'
+                name='amount'
+                label='Amount'
+                inputMode='decimal'
+                pattern='[0-9.]*'
+            />
+        </Show>
+
+        <Show when={values.type === 'multiple'}>
+            <table role='grid'>
+                <thead>
+                    <tr>
+                        <th scope='col'>Name</th>
+                        <th scope='col'>Quantity</th>
+                        <th scope='col'>Price</th>
+                        <th scope='col' className='button-col'>
+                            <FiPlusCircle className='click' onClick={() => openItemModal()} />
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <FieldArray name='items'>
+                        {({ remove, push }) => (
+                            <>
+                                <ItemModal
+                                    state={modalState}
+                                    editState={
+                                        modalItemIndex >= 0
+                                            ? ItemModal.EditStates.Editing
+                                            : ItemModal.EditStates.Adding
+                                    }
+                                    item={values.items[modalItemIndex]}
+                                    onClose={() => setModalState(ItemModal.States.Closed)}
+                                    updateItem={updatedItem =>
+                                        updateItem(values.items, push, updatedItem)
+                                    }
+                                    removeItem={() => remove(modalItemIndex)}
+                                    users={getUserIdsForItem(values)}
+                                    selectUsers={showBadges}
+                                />
+
+                                {values.items.map((item, index) => (
+                                    <tr
+                                        key={item.id}
+                                        className='click'
+                                        onClick={() => openItemModal(index)}>
+                                        <td>{item.name} {showBadges && getItemBadges(item)}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
+                                        <td className='button-col'>
+                                            <FiTrash
+                                                className='click'
+                                                onClick={e => {
+                                                    remove(index);
+                                                    e.stopPropagation();
+                                                }}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                                {values.items.length === 0 && (
+                                    <tr>
+                                        <td
+                                            height='200px'
+                                            colSpan='4'
+                                            valign='center'
+                                            align='center'>
+                                            <div
+                                                className='click no-items'
+                                                onClick={() => openItemModal()}>
+                                                Tap to add an item...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </>
+                        )}
+                    </FieldArray>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th scope='col'>Subtotal</th>
+                        <td></td>
+                        <td>{displaySubtotal(values)}</td>
+                        <td className='button-col'></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <PercentageAmountSelector name='tax' label='Tax' />
+            <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
+        </Show>
+    </>
 }
 
 function EditExpenseView({ users }) {
@@ -229,41 +387,6 @@ function EditExpenseView({ users }) {
 
     const auth = useAuth();
     const navigate = useNavigate();
-
-    const [modalItemIndex, setModalItemIndex] = useState(-1);
-    const [modalState, setModalState] = useState(ItemModal.States.Closed);
-
-    function updateItem(items, addItem, newItem) {
-        if (modalItemIndex >= 0) items[modalItemIndex] = newItem;
-        else {
-            newItem.id = nanoid();
-            addItem(newItem);
-        }
-    }
-
-    function openItemModal(edittingItemIndex = -1) {
-        setModalItemIndex(edittingItemIndex);
-        setModalState(ItemModal.States.Open);
-    }
-
-    function renderUsersLabel({ options }) {
-        const maxPeople = 2;
-        const numShow = Math.min(maxPeople, options.length);
-        const remaining = options.length - numShow;
-
-        let name = '';
-        for (let i = 0; i < numShow; i++) {
-            const option = options[i];
-            name += option.value ? users.find(u => u.user === option.value).firstName : option.text;
-            if (i < options.length - 2) name += ', ';
-            else name += ' ';
-            if (i === options.length - 2 && options.length > 1 && remaining === 0) name += 'and ';
-        }
-
-        if (remaining > 0) name += `and ${remaining} ${remaining > 1 ? 'others' : 'other'}`;
-
-        return name;
-    }
 
     // If another page passed an expense object as initial state,
     // then we are updating an expense, not adding one
@@ -301,7 +424,7 @@ function EditExpenseView({ users }) {
                                 value:
                                     PROGRESS_INITIAL_COMPLETION +
                                     (1 - PROGRESS_INITIAL_COMPLETION) *
-                                        components.reduce((t, e) => t + e.value / (e.max * components.length), 0),
+                                    components.reduce((t, e) => t + e.value / (e.max * components.length), 0),
                                 max: 1,
                             });
                         }
@@ -416,19 +539,11 @@ function EditExpenseView({ users }) {
                                     <option value='custom'>Custom</option>
                                 </LabelInput>
                                 <Show when={values.split !== 'individually'}>
-                                    <LabelInput
-                                        as='select'
+                                    <UserSelect
+                                        users={users}
                                         name='users'
                                         label='Split Among'
-                                        placeholder='Everyone'
-                                        multiple
-                                        renderLabel={renderUsersLabel}>
-                                        {users.map(user => (
-                                            <option key={user.user} value={user.user}>
-                                                {user.firstName} {user.lastName}
-                                            </option>
-                                        ))}
-                                    </LabelInput>
+                                        placeholder='Everyone' />
                                 </Show>
                             </AccordionItem>
 
@@ -439,103 +554,7 @@ function EditExpenseView({ users }) {
                             </Show>
 
                             <AccordionItem name='cost' label='Cost' fields={['type', 'amount', 'items', 'tax', 'tip']}>
-                                <LabelInput as='select' name='type' label='Expense Type'>
-                                    <option value='single'>Lump Sum</option>
-                                    <option value='multiple'>Multiple Items</option>
-                                </LabelInput>
-
-                                <Show when={values.type === 'single'}>
-                                    <LabelInput
-                                        type='text'
-                                        name='amount'
-                                        label='Amount'
-                                        inputMode='decimal'
-                                        pattern='[0-9.]*'
-                                    />
-                                </Show>
-
-                                <Show when={values.type === 'multiple'}>
-                                    <table role='grid'>
-                                        <thead>
-                                            <tr>
-                                                <th scope='col'>Name</th>
-                                                <th scope='col'>Quantity</th>
-                                                <th scope='col'>Price</th>
-                                                <th scope='col' className='button-col'>
-                                                    <FiPlusCircle className='click' onClick={() => openItemModal()} />
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <FieldArray name='items'>
-                                                {({ remove, push }) => (
-                                                    <>
-                                                        <ItemModal
-                                                            state={modalState}
-                                                            editState={
-                                                                modalItemIndex >= 0
-                                                                    ? ItemModal.EditStates.Editing
-                                                                    : ItemModal.EditStates.Adding
-                                                            }
-                                                            item={values.items[modalItemIndex]}
-                                                            onClose={() => setModalState(ItemModal.States.Closed)}
-                                                            updateItem={updatedItem =>
-                                                                updateItem(values.items, push, updatedItem)
-                                                            }
-                                                            removeItem={() => remove(modalItemIndex)}
-                                                        />
-
-                                                        {values.items.map((item, index) => (
-                                                            <tr
-                                                                key={item.id}
-                                                                className='click'
-                                                                onClick={() => openItemModal(index)}>
-                                                                <td>{item.name}</td>
-                                                                <td>{item.quantity}</td>
-                                                                <td>{`$${parseFloat(item.price).toFixed(2)}`}</td>
-                                                                <td className='button-col'>
-                                                                    <FiTrash
-                                                                        className='click'
-                                                                        onClick={e => {
-                                                                            remove(index);
-                                                                            e.stopPropagation();
-                                                                        }}
-                                                                    />
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                        {values.items.length === 0 && (
-                                                            <tr>
-                                                                <td
-                                                                    height='200px'
-                                                                    colSpan='4'
-                                                                    valign='center'
-                                                                    align='center'>
-                                                                    <div
-                                                                        className='click no-items'
-                                                                        onClick={() => openItemModal()}>
-                                                                        Tap to add an item...
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </FieldArray>
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <th scope='col'>Subtotal</th>
-                                                <td></td>
-                                                <td>{displaySubtotal(values)}</td>
-                                                <td className='button-col'></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-
-                                    <PercentageAmountSelector name='tax' label='Tax' />
-                                    <PercentageAmountSelector name='tip' label='Tip' placeholder='Optional' />
-                                </Show>
+                                <ItemsDetail users={users} />
                             </AccordionItem>
 
                             <AccordionItem name='other' label='Other' fields={['notes', 'images']}>

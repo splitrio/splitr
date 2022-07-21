@@ -93,14 +93,15 @@ def resolve_user_infos(user_ids: Optional[Iterable[str]] = None) -> Dict[str, Us
     return result
 
 
-def resolve_expense_total(expense: Dict[str, Any]) -> float:
+def resolve_expense_total(expense: Dict[str, Any]) -> Tuple[float, float]:
     """
     Calculates the total value of an expense.
     @expense: The encoded, un-transformed expense object.
-    @returns: A tuple whose first element is `user_id`'s contribution and second is the total value of the expense.
+    @returns: A tuple whose first element is the expense subtotal and whose second element is the
+        expense grand total (after considering taxes/tips)
     """
     if expense["expenseType"] == "single":
-        return expense["amount"]
+        return (expense["amount"], expense["amount"])
     elif expense["expenseType"] == "multiple":
 
         def resolve_percentage_amount(current_value: float, percentage_amount) -> float:
@@ -115,22 +116,22 @@ def resolve_expense_total(expense: Dict[str, Any]) -> float:
                     f'Invalid percentage amount type: {percentage_amount["type"]}'
                 )
 
-        total = sum(item["price"] * item["quantity"]
+        subtotal = sum(item["price"] * item["quantity"]
                     for item in expense["items"])
-        total = resolve_percentage_amount(total, expense["tax"])
+        total = resolve_percentage_amount(subtotal, expense["tax"])
         total = resolve_percentage_amount(total, expense["tip"])
-        return total
+        return (subtotal, total)
     else:
         raise Exception(f'Invalid expense type: {expense["expenseType"]}')
 
 
 def resolve_expense_contribution(
-    expense: Dict[str, Any], total: float, user_id: str
+    expense: Dict[str, Any], totals: Tuple[float, float], user_id: str
 ) -> float:
     """
     Calculates the contribution of a user towards an expense.
     @expense: The encoded, un-transformed expense object
-    @total: The total value of the expense, as returned by `resolve_expense_total`
+    @total: The subtotal/grand-total of the expense, as returned by `resolve_expense_total`
     @user_id: The id of the user whose contribution towards this expense will be found.
         Must match a user inside `expense['users']` or equal `expense['owner']`
     @users: A mapping of user ids to info about those users.
@@ -138,24 +139,44 @@ def resolve_expense_contribution(
     """
     # If user not found in users array, contribution is necessarily 0
     if user_id not in (user["user"] for user in expense["users"]): return 0
-    if expense["split"] == "individually":
-        return total
-    elif expense["split"] == "equally":
-        return total / len(expense["users"])
-    elif expense["split"] == "proportionally":
-        my_wage = next(user["wage"] for user in expense["users"] if user["user"] == user_id)
-        total_wages = sum(user["wage"] for user in expense["users"])
-        return (my_wage / total_wages) * total
-    elif expense["split"] == "custom":
-        my_weight = next(user["weight"] for user in expense["users"] if user["user"] == user_id)
-        total_weights = sum(user["weight"] for user in expense["users"])
-        return (my_weight / total_weights) * total
-    else:
-        raise Exception(f'Invalid expense split method: {expense["split"]}')
+    subtotal, total = totals
+
+    def remaining_contribution(total):
+        if expense["split"] == "individually":
+            return total
+        elif expense["split"] == "equally":
+            return total / len(expense["users"])
+        elif expense["split"] == "proportionally":
+            my_wage = next(user["wage"] for user in expense["users"] if user["user"] == user_id)
+            total_wages = sum(user["wage"] for user in expense["users"])
+            return (my_wage / total_wages) * total
+        elif expense["split"] == "custom":
+            my_weight = next(user["weight"] for user in expense["users"] if user["user"] == user_id)
+            total_weights = sum(user["weight"] for user in expense["users"])
+            return (my_weight / total_weights) * total
+        else:
+            raise Exception(f'Invalid expense split method: {expense["split"]}')
+
+    if expense["expenseType"] == "single": return remaining_contribution(total)
+
+    # For itemized expenses, contributions must be computed slightly differently
+    personal_contribution = 0
+    tax_ratio = total / subtotal
+    for item in expense["items"]:
+        if 'users' in item:
+            # This item is being assigned to individual users, so should not count toward
+            # the remaining expense total
+            item_price = item["price"] * tax_ratio
+            total -= item_price
+            if user_id in item["users"]:
+                # Items assigned to multiple users are split equally among them
+                personal_contribution += item_price / len(item["users"])
+
+    return remaining_contribution(total) + personal_contribution
 
 
 class TransformExpenseArgs(TypedDict):
-    total: float
+    totals: Tuple[float,float]
     """The total amount of this expense (if precomputed)"""
     contribution: float
     """This user's contribution towards this expense (if precomputed)"""
@@ -169,10 +190,11 @@ def transform_expense(
     @expense: The encoded expense object. **Will** be modified.
     """
     # Add total and contribution fields
-    expense["total"] = kwargs.get("total", resolve_expense_total(expense))
+    totals = kwargs.get("totals", resolve_expense_total(expense))
+    expense["total"] = totals[1]
     expense["contribution"] = kwargs.get(
         "contribution", resolve_expense_contribution(
-            expense, expense["total"], user_id)
+            expense, totals, user_id)
     )
 
     # Remap 'expenseType' to 'type', and remove 'type'
@@ -218,16 +240,47 @@ def update_and_write_expense(expense: models.ExpenseModel, data: Dict[str, Any])
     expense.notes = data["notes"]
     expense.images = data["images"]
 
+    # Expense cost
     # Seperate fields are defined for either single or multiple item expenses
     if expense.expenseType == "single":
         expense.amount = data["amount"]
     else:
-        expense.items = [
-            models.Item.new(
-                name=item["name"], quantity=item["quantity"], price=item["price"]
+        # For non-individual expenses marked as multiple, we need to normalize the data
+        # For instance, if the users of an expense are [A, B, C, D],
+        # but it exclusvely contains items marked only for A and B,
+        # then the users of the expense should only be [A, B], not [A, B, C, D]
+        if expense.split != 'individually':
+            user_ids = set()
+            all_user_ids = [user['user'] for user in data['users']]
+            for item in data['items']:
+                if 'users' not in item or not item['users']:
+                    user_ids.update(all_user_ids)
+                else:
+                    user_ids.update(item['users'])
+            data['users'] = [user for user in data['users'] if user['user'] in user_ids]
+
+        def get_item(data_item) -> models.Item:
+            item = models.Item.new(
+                name=data_item["name"],
+                quantity=data_item["quantity"],
+                price=data_item["price"]
             )
-            for item in data["items"]
-        ]
+
+            # Only consider users tied to each item if there are multiple users
+            # and this expense isn't an individual one
+            if 'users' in data_item and len(user_ids) > 1 and expense.split != 'individually':
+                item_user_ids = data_item['users']
+                if len(item_user_ids) == 0:
+                    raise BadRequest(f'Users array for item {item.name} with quantity {item.quantity} and price {item.price} must be non-empty')
+                
+                if not set(item_user_ids).issubset(user_ids):
+                    raise BadRequest(f'Users array for item {item.name} with quantity {item.quantity} and price {item.price} contains user who is not a part of this expense.')
+
+                item.users = item_user_ids
+
+            return item
+
+        expense.items = [get_item(item) for item in data["items"]]
         expense.tax = models.PercentageAmount(**data["tax"])
         expense.tip = models.PercentageAmount(**data["tip"])
 
@@ -376,9 +429,9 @@ def get_expense(expense_id):
         encoded = Encoder.encode(model)
 
         # Populate result's user field with information about all associated users
-        total = resolve_expense_total(encoded)
+        totals = resolve_expense_total(encoded)
         contribution = resolve_expense_contribution(
-            encoded, total, user_id
+            encoded, totals, user_id
         )  # This user's contribution
         user_infos = resolve_user_infos(
             user["user"] for user in encoded["users"])
@@ -391,17 +444,17 @@ def get_expense(expense_id):
                 user["contribution"] = contribution
             else:
                 user["contribution"] = resolve_expense_contribution(
-                    encoded, total, user["user"]
+                    encoded, totals, user["user"]
                 )
 
             # Add proportional contribution
-            user["proportion"] = user["contribution"] / total
+            user["proportion"] = user["contribution"] / totals[1]
 
         # Add information about the owner of the expense
         encoded["ownerInfo"] = next(iter(resolve_user_infos([encoded["owner"]]).values()))
 
         return jsonify(
-            transform_expense(encoded, user_id, total=total,
+            transform_expense(encoded, user_id, totals=totals,
                               contribution=contribution)
         )
     except DoesNotExist:

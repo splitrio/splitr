@@ -29,6 +29,10 @@ const ItemSchema = object({
     name: NameSchema,
     quantity: NullableNumber().positive('Must be positive!').integer('Must be an integer!').required('Required!'),
     price: CurrencySchema.required('Required!'),
+    users: array(string().required()).optional().transform(users => {
+        if (users && users.length === 0) return undefined;
+        return users;
+    })
 });
 
 const WeightSchema = object({
@@ -58,6 +62,7 @@ const DefaultItem = () => ({
     name: '',
     quantity: 1,
     price: '',
+    users: []
 });
 
 const DefaultWeight = userId => ({

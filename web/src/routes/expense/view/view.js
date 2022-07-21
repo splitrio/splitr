@@ -9,7 +9,7 @@ import LoadingBlock from '../../../components/LoadingBlock';
 import Show from '../../../components/Show';
 import toast from 'react-hot-toast';
 import CloseHeader from '../../../components/CloseHeader';
-import { formatCurrency } from '../../../util/util';
+import { formatCurrency, getBadge } from '../../../util/util';
 
 import {
     FaCalendar,
@@ -70,6 +70,16 @@ function resolveItemsTooltips(expense) {
     };
 }
 
+function getItemBadges(expense, item) {
+    const badges = [];
+    if (!item.users) return badges;
+    for (const userId of item.users) {
+        const user = expense.users.find(u => u.user === userId);
+        badges.push(getBadge(`${user.firstName} ${user.lastName}`));
+    }
+    return badges;
+}
+
 function ItemsDetail({ expense }) {
     const tooltips = resolveItemsTooltips(expense);
     return (
@@ -88,7 +98,7 @@ function ItemsDetail({ expense }) {
                 {expense.items.map(item => (
                     <tr key={item.id}>
                         <td>
-                            {item.quantity} {item.name}
+                            {item.quantity} {item.name} {getItemBadges(expense, item)}
                         </td>
                         <td>{formatCurrency(item.quantity * item.price)}</td>
                     </tr>

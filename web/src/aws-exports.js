@@ -41,9 +41,7 @@ const awsmobile = {
             "tableName": "splitr-dev",
             "region": "us-west-1"
         }
-    ],
-    "aws_user_files_s3_bucket": "splitr-storage222809-dev",
-    "aws_user_files_s3_bucket_region": "us-west-1"
+    ]
 };
 
 

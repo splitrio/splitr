@@ -53,6 +53,15 @@ _ItemSchema = {
     'price': {
         'type': 'float',
         'noneof': [{'max': 0}],  # positive
+    },
+    'users': {
+        'type': 'list',
+        'required': False,
+        'minlength': 1,
+        'schema': {
+            'type': 'string',
+            'empty': False
+        }
     }
 }
 
@@ -98,7 +107,8 @@ _ExpenseSchemaBase = {
     'images': {
         'type': 'list',
         'schema': {
-            'type': 'string'
+            'type': 'string',
+            'empty': False
         },
     }
 }

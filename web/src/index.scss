@@ -140,6 +140,27 @@ input, select, textarea {
 }
 
 /**
+ * Badges
+ */
+
+.badge {
+    border-radius: 4px;
+    padding: 0 5px;
+    font-size: small;
+    &:not(:last-child) {
+        margin-right: 8px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        color: black;
+    }
+
+    @media (prefers-color-scheme: light) {
+        color: white;
+    }
+}
+
+/**
  * react-tiny-fab fixes to interop with Pico.css
 */
 

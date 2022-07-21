@@ -228,6 +228,7 @@ function ItemsDetail({ users }) {
 
     function getItemBadges(item) {
         const badges = [];
+        if (!item.users) return badges;
         for (const userId of item.users) {
             const user = users.find(u => u.user === userId);
             badges.push(getBadge(`${user.firstName} ${user.lastName}`));

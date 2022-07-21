@@ -14,12 +14,6 @@
         "read",
         "update",
         "delete"
-      ],
-      "splitrStorage": [
-        "create",
-        "read",
-        "update",
-        "delete"
       ]
     }
   },

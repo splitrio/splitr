@@ -55,13 +55,6 @@
             "Arn",
             "StreamArn"
           ]
-        },
-        {
-          "category": "storage",
-          "resourceName": "splitrStorage",
-          "attributes": [
-            "BucketName"
-          ]
         }
       ]
     }

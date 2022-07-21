@@ -41,6 +41,10 @@ export type AmplifyDependentResourcesAttributes = {
             "SortKeyName": "string",
             "SortKeyType": "string",
             "Region": "string"
+        },
+        "splitrStorage": {
+            "BucketName": "string",
+            "Region": "string"
         }
     }
 }
